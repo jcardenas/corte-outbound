@@ -883,8 +883,13 @@ function parseCSV(text) {
   const rows = [];
   for (let i = 1; i < lines.length; i++) {
     const vals = splitCSVLine(lines[i]);
+    if (vals.every(v => !v.trim())) continue; // skip empty rows
     const row = {};
-    headers.forEach((h, j) => { row[h] = (vals[j] || '').trim(); });
+    // Store by header name AND by numeric index for positional access
+    headers.forEach((h, j) => {
+      row[h] = (vals[j] || '').trim();
+      row[j] = (vals[j] || '').trim(); // positional key
+    });
     rows.push(row);
   }
   return rows;
@@ -905,18 +910,24 @@ function splitCSVLine(line) {
 }
 
 function parseCoordSheet(rows) {
-  // Expected columns: CEDULA, NOMBRE_ASESOR, COORDINADOR, ANTIGUEDAD, JEFE_OPERACION
+  // Columnas exactas hoja COORDINADORES:
+  // A=CEDULA, B=NOMBRE ASESOR, C=COORDINADOR, D=FECHA,
+  // E=ANTIGUEDAD, F=ESTADO, G=JEFE DE OPERACION, H=CAMPAÑA, I=FECHA NACIMIENTO
   const map = {};
   rows.forEach(r => {
-    const cedula = r['CEDULA'] || r['CEDULA VENDEDOR'] || r['CC'] || '';
-    if (cedula) {
-      map[cedula] = {
-        coordinador: r['COORDINADOR'] || r['NOMBRE COORDINADOR'] || 'Sin coordinador',
-        antiguedad: r['ANTIGUEDAD'] || r['ANTIGÜEDAD'] || '',
-        jefe: r['JEFE OPERACION'] || r['JEFE DE OPERACION'] || r['JEFE'] || 'Sin jefe',
-        nombreAsesor: r['NOMBRE ASESOR'] || r['NOMBRE USUARIO'] || ''
-      };
-    }
+    // Buscar cédula por nombre de columna o por posición (col A = índice 0)
+    const vals = Object.values(r);
+    const keys = Object.keys(r);
+    const cedula = (r['CEDULA'] || r['CÉDULA'] || vals[0] || '').toString().trim();
+    if (!cedula || cedula === 'CEDULA' || cedula === 'CÉDULA') return;
+    map[cedula] = {
+      nombreAsesor: (r['NOMBRE ASESOR'] || vals[1] || '').toString().trim(),
+      coordinador:  (r['COORDINADOR']   || vals[2] || '').toString().trim() || 'Sin coordinador',
+      antiguedad:   (r['ANTIGÜEDAD'] || r['ANTIGUEDAD'] || vals[4] || '').toString().trim(),
+      estado:       (r['ESTADO']        || vals[5] || '').toString().trim(),
+      jefe:         (r['JEFE DE OPERACION'] || r['JEFE DE OPERACIÓN'] || vals[6] || '').toString().trim() || 'Sin jefe',
+      campana:      (r['CAMPAÑA'] || r['CAMPANA'] || vals[7] || '').toString().trim(),
+    };
   });
   return map;
 }
@@ -942,42 +953,36 @@ function getField(row, letter) {
   return '';
 }
 
-function processRow(row, headers) {
-  // Map by column position
-  const cols = Object.values(row);
-  const get = (i) => (cols[i] || '').toString().trim().toUpperCase();
+function processRow(row) {
+  // Use numeric positional keys (set during CSV parse)
+  const get = (i) => (row[i] || '').toString().trim().toUpperCase();
+  const getRaw = (i) => (row[i] || '').toString().trim();
 
-  const tipoCampana = get(24); // Y = col 25 = index 24
-  const producto    = get(21); // V = col 22 = index 21
-  const estadoServ  = get(20); // U = col 21 = index 20
-  const tipoContrato= get(25); // Z = col 26 = index 25
-  const fechaVenta  = get(28); // AC = col 29 = index 28
-  const fechaDigit  = get(29); // AD = col 30 = index 29
-  const cedula      = get(14); // O = col 15 = index 14
-  const nombreUser  = cols[15] ? cols[15].toString().trim() : ''; // P
+  const tipoCampana  = get(24); // Y = col 25 = index 24 — TIPO CAMPAÑA
+  const producto     = get(21); // V = col 22 = index 21 — PRODUCTO
+  const estadoServ   = get(20); // U = col 21 = index 20 — ESTADO SERVICIO
+  const tipoContrato = get(25); // Z = col 26 = index 25 — TIPO CONTRATO
+  const fechaVenta   = getRaw(28); // AC = col 29 = index 28 — FECHA VENTA
+  const fechaDigit   = getRaw(29); // AD = col 30 = index 29 — FECHA DIGITACION
+  const cedula       = get(14); // O = col 15 = index 14 — CEDULA VENDEDOR
+  const nombreUser   = getRaw(15); // P = col 16 = index 15 — NOMBRE USUARIO
 
   return { tipoCampana, producto, estadoServ, tipoContrato, fechaVenta, fechaDigit, cedula, nombreUser };
 }
 
 function getEstadoGroup(estado) {
-  const e = estado.toUpperCase();
-  if (ESTADOS.DIGITADO.some(s => e.includes(s) || s.includes(e))) return 'DIGITADO';
-  if (ESTADOS.RECHAZO.some(s => e.includes(s) || s.includes(e))) return 'RECHAZO';
-  if (ESTADOS.NUEVA.some(s => e.includes(s) || s.includes(e))) return 'NUEVA';
-  // Partial match
-  for (const [g, list] of Object.entries(ESTADOS)) {
-    for (const s of list) {
-      if (e.includes(s.substring(0,6)) || s.includes(e.substring(0,6))) return g;
-    }
-  }
-  return null;
+  const e = estado.toString().trim().toUpperCase();
+  if (ESTADOS.DIGITADO.includes(e)) return 'DIGITADO';
+  if (ESTADOS.RECHAZO.includes(e)) return 'RECHAZO';
+  if (ESTADOS.NUEVA.includes(e)) return 'NUEVA';
+  return null; // estado no reconocido — se excluye del conteo
 }
 
 function filterRelevant(rows) {
   return rows.filter(row => {
     const { tipoCampana, producto } = processRow(row);
-    const campanaOk = CAMPANAS.some(c => tipoCampana.includes(c) || c.includes(tipoCampana.substring(0,6)));
-    const productoOk = PRODUCTOS.some(p => producto.includes(p) || p.includes(producto.substring(0,6)));
+    const campanaOk = CAMPANAS.includes(tipoCampana);
+    const productoOk = PRODUCTOS.includes(producto);
     return campanaOk && productoOk;
   });
 }
@@ -999,13 +1004,8 @@ function buildDataset() {
       nombreAsesor: p.nombreUser
     };
 
-    // Normalize producto
-    let prodNorm = null;
-    for (const pr of PRODUCTOS) {
-      if (p.producto.includes(pr) || pr.includes(p.producto.substring(0,6))) {
-        prodNorm = pr; break;
-      }
-    }
+    // Normalize producto — exact match only
+    const prodNorm = PRODUCTOS.includes(p.producto) ? p.producto : null;
     if (!prodNorm) return;
 
     result.push({
