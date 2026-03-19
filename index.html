@@ -421,46 +421,102 @@ function byContrato(k,m){return m[k]||0;}
 // ── COORDINADOR ──
 function renderCoordinador(){
   const ds=dataset;
+
   const GRUPOS=[
-    {id:'mig',  label:'MIGRACIÓN + MIGRACIÓN POWER',          prods:['MIGRACION','MIGRACION POWER'],       color:'#2563EB', light:'#EFF6FF'},
-    {id:'port', label:'PORTABILIDAD + PORTABILIDAD POWER',    prods:['PORTABILIDAD','PORTABILIDAD POWER'],  color:'#DA0027', light:'#FFF0F2'},
-    {id:'ln',   label:'LÍNEA NUEVA + LÍNEA NUEVA POWER',      prods:['LINEA NUEVA','LINEA NUEVA POWER'],    color:'#16A34A', light:'#F0FDF4'},
+    {id:'mig',  label:'MIGRACIÓN',      prods:['MIGRACION','MIGRACION POWER'],       cols:['MIGRACION','MIGRACION POWER'],       color:'#2563EB', light:'#EFF6FF'},
+    {id:'port', label:'PORTABILIDAD',   prods:['PORTABILIDAD','PORTABILIDAD POWER'],  cols:['PORTABILIDAD','PORTABILIDAD POWER'],  color:'#DA0027', light:'#FFF0F2'},
+    {id:'ln',   label:'LÍNEA NUEVA',    prods:['LINEA NUEVA','LINEA NUEVA POWER'],    cols:['LINEA NUEVA','LINEA NUEVA POWER'],    color:'#16A34A', light:'#F0FDF4'},
   ];
 
+  // Obtener todos los coordinadores únicos con datos
+  const allCoords=[...new Set(ds.map(r=>r.coordinador))].filter(Boolean).sort();
+
   function tablaGrupo(g){
-    const rows=ds.filter(r=>g.prods.includes(r.producto));
+    // Para cada coordinador y cada producto, contar estados
     const map={};
-    rows.forEach(r=>{
-      if(!map[r.coordinador]) map[r.coordinador]={coord:r.coordinador,jefe:r.jefe,total:0,d:0,rx:0,nv:0};
-      const m=map[r.coordinador]; m.total++;
-      if(r.estadoGroup==='D') m.d++;
-      else if(r.estadoGroup==='R') m.rx++;
-      else m.nv++;
+    allCoords.forEach(c=>{
+      map[c]={};
+      g.cols.forEach(p=>{ map[c][p]={d:0,r:0,n:0,total:0}; });
+      map[c].total=0;
     });
-    const sorted=Object.values(map).sort((a,b)=>b.total-a.total);
-    const tot=rows.length;
-    return '<div class="table-card" style="margin-bottom:0">'
-      +'<div class="table-card-header" style="background:'+g.light+';border-bottom:2px solid '+g.color+'">'
-      +'<div class="table-card-title" style="color:'+g.color+'">'+g.label+'</div>'
-      +'<div style="font-family:Barlow Condensed,sans-serif;font-weight:800;font-size:22px;color:'+g.color+'">'+tot+'</div></div>'
-      +'<table><thead><tr><th>#</th><th>Coordinador</th><th>Jefe Op.</th>'
-      +'<th class="tc">Total</th><th class="tc">Dig.</th><th class="tc">Rec.</th><th class="tc">Nueva</th><th>%</th>'
-      +'</tr></thead><tbody>'
-      +sorted.map((r,i)=>{
-        const pct=tot?(r.total/tot*100).toFixed(1):0;
-        return '<tr>'
-          +'<td><span class="rank-num '+(i<3?'top':'')+'">'+( i+1)+'</span></td>'
-          +'<td><strong>'+r.coord+'</strong></td>'
-          +'<td style="font-size:12px;color:var(--gray-600)">'+r.jefe+'</td>'
-          +'<td class="tc tb" style="color:'+g.color+'">'+r.total+'</td>'
-          +'<td class="tc"><span class="pill pill-d">'+r.d+'</span></td>'
-          +'<td class="tc"><span class="pill pill-r">'+r.rx+'</span></td>'
-          +'<td class="tc"><span class="pill pill-n">'+r.nv+'</span></td>'
-          +'<td><div class="pbar-wrap"><div class="pbar-bg"><div class="pbar-fill" style="width:'+pct+'%;background:'+g.color+'"></div></div>'
-          +'<span class="pbar-pct" style="color:'+g.color+'">'+pct+'%</span></div></td>'
-          +'</tr>';
-      }).join('')
-      +'</tbody></table></div>';
+    ds.filter(r=>g.prods.includes(r.producto)).forEach(r=>{
+      if(!map[r.coordinador]) return;
+      const m=map[r.coordinador][r.producto];
+      if(!m) return;
+      if(r.estadoGroup==='D') m.d++;
+      else if(r.estadoGroup==='R') m.r++;
+      else m.n++;
+      m.total++;
+      map[r.coordinador].total++;
+    });
+
+    // Ordenar coordinadores por total descendente
+    const sorted=allCoords.filter(c=>map[c].total>0).sort((a,b)=>map[b].total-map[a].total);
+    // Agregar los que tienen 0 al final
+    const sinVenta=allCoords.filter(c=>map[c].total===0);
+    const ordenados=[...sorted,...sinVenta];
+
+    // Totales por columna
+    const totals={};
+    g.cols.forEach(p=>{ totals[p]={d:0,r:0,n:0,total:0}; });
+    let grandTotal=0;
+    ordenados.forEach(c=>{
+      g.cols.forEach(p=>{
+        totals[p].d+=map[c][p].d;
+        totals[p].r+=map[c][p].r;
+        totals[p].n+=map[c][p].n;
+        totals[p].total+=map[c][p].total;
+      });
+      grandTotal+=map[c].total;
+    });
+
+    // Header con colspan por producto
+    let thead='<thead>';
+    thead+='<tr><th rowspan="2" style="background:'+g.light+';color:'+g.color+'">COORDINADOR</th>';
+    g.cols.forEach(p=>{
+      thead+='<th colspan="4" style="text-align:center;background:'+g.light+';color:'+g.color+';border-left:2px solid '+g.color+'">'+p+'</th>';
+    });
+    thead+='<th rowspan="2" style="text-align:center;background:'+g.light+';color:'+g.color+'">TOTAL</th></tr>';
+    thead+='<tr>';
+    g.cols.forEach(()=>{
+      thead+='<th style="text-align:center">DIG</th><th style="text-align:center">REC</th><th style="text-align:center">NVA</th><th style="text-align:center;font-weight:800">TOT</th>';
+    });
+    thead+='</tr></thead>';
+
+    // Body
+    let tbody='<tbody>';
+    ordenados.forEach(c=>{
+      tbody+='<tr>';
+      tbody+='<td><strong>'+c+'</strong></td>';
+      g.cols.forEach(p=>{
+        const m=map[c][p];
+        tbody+='<td class="tc">'+(m.d||'')+'</td>';
+        tbody+='<td class="tc" style="color:#DC2626">'+(m.r||'')+'</td>';
+        tbody+='<td class="tc" style="color:var(--green)">'+(m.n||'')+'</td>';
+        tbody+='<td class="tc tb" style="color:'+g.color+'">'+(m.total||'')+'</td>';
+      });
+      tbody+='<td class="tc tb" style="color:'+g.color+';background:'+g.light+'">'+map[c].total+'</td>';
+      tbody+='</tr>';
+    });
+    // Fila totales
+    tbody+='<tr style="background:'+g.light+';font-weight:700;border-top:2px solid '+g.color+'">';
+    tbody+='<td style="font-weight:800;color:'+g.color+'">TOTAL VENTAS</td>';
+    g.cols.forEach(p=>{
+      tbody+='<td class="tc">'+totals[p].d+'</td>';
+      tbody+='<td class="tc" style="color:#DC2626">'+totals[p].r+'</td>';
+      tbody+='<td class="tc" style="color:var(--green)">'+totals[p].n+'</td>';
+      tbody+='<td class="tc tb" style="color:'+g.color+'">'+totals[p].total+'</td>';
+    });
+    tbody+='<td class="tc tb" style="color:'+g.color+';font-size:18px">'+grandTotal+'</td>';
+    tbody+='</tr></tbody>';
+
+    return '<div class="table-card" style="margin-bottom:0;overflow-x:auto">'
+      +'<div class="table-card-header" style="background:'+g.light+';border-bottom:3px solid '+g.color+'">'
+      +'<div class="table-card-title" style="color:'+g.color+'">'+g.label+' + '+g.label+' POWER</div>'
+      +'<div style="font-family:Barlow Condensed,sans-serif;font-weight:800;font-size:24px;color:'+g.color+'">'+grandTotal+'</div>'
+      +'</div>'
+      +'<table style="font-size:12px">'+thead+tbody+'</table>'
+      +'</div>';
   }
 
   function getHoraData(prods){
@@ -474,32 +530,38 @@ function renderCoordinador(){
     return bH;
   }
 
-  let tablas='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:28px">';
-  GRUPOS.forEach(g=>{ tablas+=tablaGrupo(g); });
-  tablas+='</div>';
+  // Build HTML
+  let html='<div class="section-title">VENTAS POR COORDINADOR — POR TIPO DE PRODUCTO <span class="badge">HOY</span></div>';
 
-  let graficas='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:24px">';
+  // 3 tablas apiladas verticalmente
   GRUPOS.forEach(g=>{
-    graficas+='<div class="chart-card" style="margin-bottom:0;border-top:3px solid '+g.color+'">'
-      +'<div class="chart-title" style="color:'+g.color+';margin-bottom:12px">'+g.label+'</div>'
-      +'<div class="h200"><canvas id="chHora_'+g.id+'"></canvas></div></div>';
+    html+='<div style="margin-bottom:20px">'+tablaGrupo(g)+'</div>';
   });
-  graficas+='</div>';
 
-  document.getElementById('coord-content').innerHTML=
-    '<div class="section-title">RANKINGS POR TIPO DE PRODUCTO <span class="badge">HOY</span></div>'
-    +tablas
-    +'<div class="section-title">VENTAS POR HORA — POR TIPO DE PRODUCTO</div>'
-    +graficas;
+  // 3 gráficas por hora en row
+  html+='<div class="section-title">VENTAS POR HORA — POR TIPO DE PRODUCTO</div>';
+  html+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:24px">';
+  GRUPOS.forEach(g=>{
+    html+='<div class="chart-card" style="margin-bottom:0;border-top:3px solid '+g.color+'">'
+      +'<div class="chart-title" style="color:'+g.color+';margin-bottom:12px">'+g.label+' + '+g.label+' POWER</div>'
+      +'<div class="h200"><canvas id="chHG_'+g.id+'"></canvas></div></div>';
+  });
+  html+='</div>';
 
+  document.getElementById('coord-content').innerHTML=html;
+
+  // Render hora charts
   const horas=Array.from({length:14},(_,i)=>i+6);
   GRUPOS.forEach(g=>{
     const bH=getHoraData(g.prods);
-    destroyChart('chHora_'+g.id);
-    const ctx=document.getElementById('chHora_'+g.id);
-    if(ctx) charts['chHora_'+g.id]=new Chart(ctx,{
+    destroyChart('chHG_'+g.id);
+    const ctx=document.getElementById('chHG_'+g.id);
+    if(ctx) charts['chHG_'+g.id]=new Chart(ctx,{
       type:'bar',
-      data:{labels:horas.map(h=>h+':00'),datasets:[{label:'Ventas',data:horas.map(h=>bH[h]||0),backgroundColor:g.color,borderRadius:4}]},
+      data:{
+        labels:horas.map(h=>h+':00'),
+        datasets:[{label:'Ventas',data:horas.map(h=>bH[h]||0),backgroundColor:g.color,borderRadius:4}]
+      },
       options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}
     });
   });
