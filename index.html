@@ -833,6 +833,7 @@ async function loadData() {
     rawData = parseCSV(text);
 
     if (rawData.length === 0) throw new Error('La hoja está vacía o no se pudo leer');
+    detectColumns(rawData[0]); // auto-detect column positions from headers
 
     // ── Cargar hoja COORDINADORES ──
     // Intentar con gid guardado, luego probar gids comunes
@@ -965,27 +966,53 @@ function getField(row, letter) {
 }
 
 function normalize(str) {
-  // Remove accents, trim, uppercase
   return (str || '').toString().trim()
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .toUpperCase()
-    .replace(/\s+/g, ' '); // collapse multiple spaces
+    .replace(/\s+/g, ' ');
+}
+
+// Column index map — detected from headers automatically
+let COL = {};
+
+function detectColumns(firstRow) {
+  const keys = Object.keys(firstRow);
+  keys.forEach((k, i) => {
+    const n = normalize(k);
+    if (n.includes('TIPO CAMPANA') || n.includes('TIPO CAMPAN')) COL.tipoCampana = i;
+    if (n === 'PRODUCTO') COL.producto = i;
+    if (n.includes('ESTADO SERVICIO') || n.includes('ESTADO SERV')) COL.estadoServ = i;
+    if (n.includes('TIPO CONTRATO')) COL.tipoContrato = i;
+    if (n.includes('FECHA VENTA') || (n.includes('FECHA') && n.includes('VENTA'))) COL.fechaVenta = i;
+    if (n.includes('FECHA DIGIT') || (n.includes('FECHA') && n.includes('DIGIT'))) COL.fechaDigit = i;
+    if (n.includes('CEDULA VENDEDOR') || n.includes('CEDULA VEND')) COL.cedula = i;
+    if (n.includes('NOMBRE USUARIO') || n.includes('NOMBRE USUA')) COL.nombreUser = i;
+  });
+  // Fallback to positional if not found
+  if (COL.tipoCampana === undefined) COL.tipoCampana = 24;
+  if (COL.producto    === undefined) COL.producto    = 21;
+  if (COL.estadoServ  === undefined) COL.estadoServ  = 20;
+  if (COL.tipoContrato=== undefined) COL.tipoContrato= 25;
+  if (COL.fechaVenta  === undefined) COL.fechaVenta  = 28;
+  if (COL.fechaDigit  === undefined) COL.fechaDigit  = 29;
+  if (COL.cedula      === undefined) COL.cedula      = 14;
+  if (COL.nombreUser  === undefined) COL.nombreUser  = 15;
+  console.log('Columnas detectadas:', JSON.stringify(COL));
 }
 
 function processRow(row) {
   const get    = (i) => normalize(row[i]);
   const getRaw = (i) => (row[i] || '').toString().trim();
-
-  const tipoCampana  = get(24); // Y — TIPO CAMPAÑA
-  const producto     = get(21); // V — PRODUCTO
-  const estadoServ   = get(20); // U — ESTADO SERVICIO
-  const tipoContrato = get(25); // Z — TIPO CONTRATO
-  const fechaVenta   = getRaw(28); // AC — FECHA VENTA
-  const fechaDigit   = getRaw(29); // AD — FECHA DIGITACION
-  const cedula       = get(14); // O — CEDULA VENDEDOR
-  const nombreUser   = getRaw(15); // P — NOMBRE USUARIO
-
-  return { tipoCampana, producto, estadoServ, tipoContrato, fechaVenta, fechaDigit, cedula, nombreUser };
+  return {
+    tipoCampana:  get(COL.tipoCampana),
+    producto:     get(COL.producto),
+    estadoServ:   get(COL.estadoServ),
+    tipoContrato: get(COL.tipoContrato),
+    fechaVenta:   getRaw(COL.fechaVenta),
+    fechaDigit:   getRaw(COL.fechaDigit),
+    cedula:       get(COL.cedula),
+    nombreUser:   getRaw(COL.nombreUser),
+  };
 }
 
 function getEstadoGroup(estado) {
