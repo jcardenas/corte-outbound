@@ -3,1775 +3,546 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Corte Outbound Móvil — Claro Colombia</title>
 <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="pragma" content="no-cache">
-<meta http-equiv="expires" content="0">
-<!-- VERSION: 2.0.0 -->
+<title>Corte Outbound Móvil — Claro Colombia v3.0</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
-  :root {
-    --red: #DA0027;
-    --red-dark: #A8001D;
-    --red-light: #FF1A40;
-    --red-pale: #FFF0F2;
-    --white: #FFFFFF;
-    --gray-50: #F8F9FA;
-    --gray-100: #F1F3F5;
-    --gray-200: #E9ECEF;
-    --gray-300: #DEE2E6;
-    --gray-400: #CED4DA;
-    --gray-500: #ADB5BD;
-    --gray-600: #6C757D;
-    --gray-700: #495057;
-    --gray-800: #343A40;
-    --gray-900: #212529;
-    --green: #16A34A;
-    --green-light: #DCFCE7;
-    --orange: #EA580C;
-    --orange-light: #FFF7ED;
-    --blue: #2563EB;
-    --blue-light: #EFF6FF;
-    --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
-    --shadow: 0 2px 8px rgba(0,0,0,0.10);
-    --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
-    --radius: 12px;
-    --radius-sm: 8px;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'Barlow', sans-serif;
-    background: var(--gray-50);
-    color: var(--gray-900);
-    min-height: 100vh;
-  }
-
-  /* ── HEADER ── */
-  .header {
-    background: var(--white);
-    border-bottom: 3px solid var(--red);
-    padding: 0 32px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 64px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    box-shadow: var(--shadow);
-  }
-  .header-brand {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-  }
-  .logo-box {
-    background: var(--red);
-    color: white;
-    font-family: 'Barlow Condensed', sans-serif;
-    font-weight: 900;
-    font-size: 22px;
-    padding: 6px 14px;
-    letter-spacing: 1px;
-    border-radius: 6px;
-  }
-  .header-title {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-weight: 700;
-    font-size: 18px;
-    color: var(--gray-800);
-    letter-spacing: 0.5px;
-  }
-  .header-title span {
-    color: var(--red);
-  }
-  .header-right {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-  }
-  .sync-badge {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    background: var(--gray-100);
-    border: 1px solid var(--gray-200);
-    border-radius: 20px;
-    padding: 5px 13px;
-    font-size: 12px;
-    color: var(--gray-600);
-  }
-  .sync-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: var(--green);
-    animation: pulse 2s infinite;
-  }
-  @keyframes pulse {
-    0%,100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.5; transform: scale(0.8); }
-  }
-  .last-update {
-    font-size: 11px;
-    color: var(--gray-500);
-  }
-  .btn-refresh {
-    background: var(--red);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 7px 16px;
-    font-family: 'Barlow', sans-serif;
-    font-weight: 600;
-    font-size: 13px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    transition: background 0.2s;
-  }
-  .btn-refresh:hover { background: var(--red-dark); }
-  .btn-refresh.loading { opacity: 0.7; pointer-events: none; }
-
-  /* ── NAV TABS ── */
-  .nav-tabs {
-    background: var(--white);
-    border-bottom: 1px solid var(--gray-200);
-    padding: 0 32px;
-    display: flex;
-    gap: 4px;
-  }
-  .tab-btn {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-weight: 700;
-    font-size: 14px;
-    letter-spacing: 0.5px;
-    padding: 14px 22px;
-    border: none;
-    background: transparent;
-    color: var(--gray-500);
-    cursor: pointer;
-    border-bottom: 3px solid transparent;
-    margin-bottom: -1px;
-    transition: all 0.2s;
-    text-transform: uppercase;
-  }
-  .tab-btn:hover { color: var(--gray-800); }
-  .tab-btn.active {
-    color: var(--red);
-    border-bottom-color: var(--red);
-  }
-
-  /* ── PAGES ── */
-  .page { display: none; padding: 28px 32px; }
-  .page.active { display: block; }
-
-  /* ── SECTION TITLE ── */
-  .section-title {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-weight: 800;
-    font-size: 22px;
-    color: var(--gray-800);
-    letter-spacing: 0.5px;
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .section-title::after {
-    content: '';
-    flex: 1;
-    height: 2px;
-    background: var(--gray-200);
-    margin-left: 8px;
-  }
-  .section-title .badge {
-    background: var(--red);
-    color: white;
-    font-size: 11px;
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-  }
-
-  /* ── KPI CARDS ── */
-  .kpi-grid {
-    display: grid;
-    gap: 16px;
-    margin-bottom: 24px;
-  }
-  .kpi-grid-6 { grid-template-columns: repeat(6, 1fr); }
-  .kpi-grid-4 { grid-template-columns: repeat(4, 1fr); }
-  .kpi-grid-3 { grid-template-columns: repeat(3, 1fr); }
-  .kpi-grid-2 { grid-template-columns: repeat(2, 1fr); }
-
-  .kpi-card {
-    background: var(--white);
-    border-radius: var(--radius);
-    padding: 18px 20px;
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--gray-200);
-    position: relative;
-    overflow: hidden;
-    transition: box-shadow 0.2s, transform 0.2s;
-  }
-  .kpi-card:hover { box-shadow: var(--shadow); transform: translateY(-1px); }
-  .kpi-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 3px;
-    background: var(--accent, var(--red));
-  }
-  .kpi-label {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.8px;
-    text-transform: uppercase;
-    color: var(--gray-500);
-    margin-bottom: 8px;
-  }
-  .kpi-value {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-weight: 800;
-    font-size: 36px;
-    color: var(--gray-900);
-    line-height: 1;
-    margin-bottom: 4px;
-  }
-  .kpi-sub {
-    font-size: 12px;
-    color: var(--gray-500);
-  }
-  .kpi-card.red { --accent: var(--red); }
-  .kpi-card.green { --accent: var(--green); }
-  .kpi-card.orange { --accent: var(--orange); }
-  .kpi-card.blue { --accent: var(--blue); }
-  .kpi-card.gray { --accent: var(--gray-400); }
-
-  /* ── CHART CARDS ── */
-  .chart-card {
-    background: var(--white);
-    border-radius: var(--radius);
-    padding: 22px 24px;
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--gray-200);
-    margin-bottom: 24px;
-  }
-  .chart-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 18px;
-  }
-  .chart-title {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-weight: 700;
-    font-size: 16px;
-    color: var(--gray-800);
-    letter-spacing: 0.3px;
-  }
-  .chart-subtitle {
-    font-size: 12px;
-    color: var(--gray-500);
-    margin-top: 2px;
-  }
-  .chart-wrap { position: relative; }
-
-  /* ── GRID LAYOUTS ── */
-  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
-  .grid-65 { display: grid; grid-template-columns: 1.6fr 1fr; gap: 20px; }
-
-  /* ── TABLES ── */
-  .table-card {
-    background: var(--white);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--gray-200);
-    overflow: hidden;
-    margin-bottom: 24px;
-  }
-  .table-card-header {
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--gray-200);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .table-card-title {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-weight: 700;
-    font-size: 15px;
-    color: var(--gray-800);
-  }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-  }
-  thead th {
-    background: var(--gray-50);
-    padding: 10px 14px;
-    text-align: left;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.6px;
-    text-transform: uppercase;
-    color: var(--gray-500);
-    border-bottom: 1px solid var(--gray-200);
-  }
-  tbody tr {
-    border-bottom: 1px solid var(--gray-100);
-    transition: background 0.15s;
-  }
-  tbody tr:hover { background: var(--gray-50); }
-  tbody tr:last-child { border-bottom: none; }
-  tbody td {
-    padding: 10px 14px;
-    color: var(--gray-800);
-  }
-  .td-center { text-align: center; }
-  .td-bold { font-weight: 700; font-family: 'Barlow Condensed', sans-serif; font-size: 15px; }
-
-  /* ── STATUS PILLS ── */
-  .pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    border-radius: 20px;
-    padding: 3px 10px;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-  }
-  .pill-digitado { background: var(--blue-light); color: var(--blue); }
-  .pill-rechazo { background: #FEE2E2; color: #DC2626; }
-  .pill-nueva { background: var(--green-light); color: var(--green); }
-
-  /* ── PROGRESS BAR ── */
-  .progress-wrap { display: flex; align-items: center; gap: 10px; }
-  .progress-bar-bg {
-    flex: 1;
-    height: 6px;
-    background: var(--gray-200);
-    border-radius: 10px;
-    overflow: hidden;
-  }
-  .progress-bar-fill {
-    height: 100%;
-    border-radius: 10px;
-    background: var(--red);
-    transition: width 0.6s ease;
-  }
-  .progress-pct {
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--red);
-    min-width: 36px;
-    text-align: right;
-  }
-
-  /* ── FILTERS ── */
-  .filters-row {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 20px;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-  .filter-select {
-    border: 1px solid var(--gray-300);
-    border-radius: 8px;
-    padding: 8px 14px;
-    font-family: 'Barlow', sans-serif;
-    font-size: 13px;
-    color: var(--gray-700);
-    background: var(--white);
-    cursor: pointer;
-    outline: none;
-    transition: border 0.2s;
-  }
-  .filter-select:focus { border-color: var(--red); }
-  .filter-label {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--gray-600);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  /* ── JEFE SECTION ── */
-  .jefe-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
-    margin-bottom: 24px;
-  }
-  .jefe-card {
-    background: var(--white);
-    border-radius: var(--radius);
-    border: 1px solid var(--gray-200);
-    box-shadow: var(--shadow-sm);
-    overflow: hidden;
-  }
-  .jefe-header {
-    background: var(--red);
-    color: white;
-    padding: 14px 18px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .jefe-name {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-weight: 800;
-    font-size: 16px;
-    letter-spacing: 0.5px;
-  }
-  .jefe-total {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-weight: 900;
-    font-size: 28px;
-  }
-  .jefe-body { padding: 14px 18px; }
-  .jefe-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 5px 0;
-    border-bottom: 1px solid var(--gray-100);
-    font-size: 13px;
-  }
-  .jefe-row:last-child { border-bottom: none; }
-  .jefe-row-label { color: var(--gray-600); }
-  .jefe-row-val { font-weight: 700; color: var(--gray-800); }
-
-  /* ── ESTADO BLOCKS ── */
-  .estado-row {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-    margin-bottom: 24px;
-  }
-  .estado-card {
-    border-radius: var(--radius);
-    padding: 16px 20px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
-  .estado-card.digitado { background: var(--blue-light); border: 1px solid #BFDBFE; }
-  .estado-card.rechazo { background: #FEE2E2; border: 1px solid #FECACA; }
-  .estado-card.nueva { background: var(--green-light); border: 1px solid #BBF7D0; }
-  .estado-icon {
-    font-size: 28px;
-  }
-  .estado-label {
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.7px;
-    margin-bottom: 4px;
-  }
-  .digitado .estado-label { color: var(--blue); }
-  .rechazo .estado-label { color: #DC2626; }
-  .nueva .estado-label { color: var(--green); }
-  .estado-num {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-weight: 900;
-    font-size: 32px;
-    line-height: 1;
-  }
-  .digitado .estado-num { color: var(--blue); }
-  .rechazo .estado-num { color: #DC2626; }
-  .nueva .estado-num { color: var(--green); }
-  .estado-pct { font-size: 12px; color: var(--gray-500); }
-
-  /* ── LOADING / ERROR ── */
-  .loading-screen {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 60px 40px;
-    gap: 16px;
-  }
-  .spinner {
-    width: 40px; height: 40px;
-    border: 3px solid var(--gray-200);
-    border-top-color: var(--red);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .loading-text { font-size: 14px; color: var(--gray-500); }
-
-  .error-box {
-    background: #FEF2F2;
-    border: 1px solid #FECACA;
-    border-radius: var(--radius);
-    padding: 20px 24px;
-    margin: 16px 0;
-    color: #DC2626;
-    font-size: 14px;
-  }
-  .error-box strong { display: block; margin-bottom: 6px; font-size: 15px; }
-
-  /* ── EMPTY STATE ── */
-  .empty-state {
-    text-align: center;
-    padding: 40px;
-    color: var(--gray-400);
-    font-size: 14px;
-  }
-
-  /* ── COORDINATOR PAGE ── */
-  .coord-selector {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-bottom: 24px;
-  }
-  .coord-btn {
-    border: 2px solid var(--gray-200);
-    background: var(--white);
-    border-radius: 8px;
-    padding: 8px 16px;
-    font-family: 'Barlow Condensed', sans-serif;
-    font-weight: 700;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.2s;
-    color: var(--gray-700);
-  }
-  .coord-btn:hover { border-color: var(--red); color: var(--red); }
-  .coord-btn.active { border-color: var(--red); background: var(--red); color: white; }
-
-  /* ── CONTRATO SPLIT ── */
-  .contrato-split {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-  }
-  .contrato-tag {
-    font-size: 10px;
-    font-weight: 700;
-    padding: 2px 7px;
-    border-radius: 4px;
-    letter-spacing: 0.4px;
-  }
-  .contrato-dig { background: #EDE9FE; color: #7C3AED; }
-  .contrato-grab { background: #FEF3C7; color: #D97706; }
-
-  /* ── ASESOR RANK ── */
-  .rank-num {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-weight: 800;
-    font-size: 16px;
-    color: var(--gray-400);
-    width: 24px;
-  }
-  .rank-num.top { color: var(--red); }
-  .asesor-name { font-weight: 600; font-size: 13px; }
-  .asesor-cedula { font-size: 11px; color: var(--gray-500); }
-
-  /* ── HORA CHART ── */
-  .hora-chart-wrap { height: 200px; }
-
-  /* ── CONFIG PANEL ── */
-  .config-panel {
-    background: #FFFBEB;
-    border: 1px solid #FDE68A;
-    border-radius: var(--radius);
-    padding: 18px 22px;
-    margin-bottom: 20px;
-    display: none;
-  }
-  .config-panel.show { display: block; }
-  .config-title {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-weight: 700;
-    font-size: 16px;
-    color: #92400E;
-    margin-bottom: 12px;
-    display: flex; align-items: center; gap: 8px;
-  }
-  .config-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
-  .config-group { display: flex; flex-direction: column; gap: 5px; }
-  .config-group label { font-size: 11px; font-weight: 700; color: var(--gray-600); text-transform: uppercase; }
-  .config-input {
-    border: 1px solid var(--gray-300);
-    border-radius: 6px;
-    padding: 7px 12px;
-    font-family: 'Barlow', sans-serif;
-    font-size: 13px;
-    width: 420px;
-    max-width: 100%;
-  }
-  .btn-config {
-    background: #D97706;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 8px 18px;
-    font-family: 'Barlow', sans-serif;
-    font-weight: 600;
-    font-size: 13px;
-    cursor: pointer;
-  }
-  .btn-config:hover { background: #B45309; }
-
-  /* ── MIXTO ── */
-  .mixed-row { display: flex; gap: 16px; align-items: center; margin-bottom: 6px; }
-
-  @media (max-width: 1200px) {
-    .kpi-grid-6 { grid-template-columns: repeat(3, 1fr); }
-    .jefe-grid { grid-template-columns: 1fr 1fr; }
-    .grid-2, .grid-65 { grid-template-columns: 1fr; }
-  }
-  @media (max-width: 768px) {
-    .kpi-grid-6, .kpi-grid-4, .kpi-grid-3 { grid-template-columns: repeat(2, 1fr); }
-    .jefe-grid, .estado-row { grid-template-columns: 1fr; }
-    .header { padding: 0 16px; }
-    .page { padding: 20px 16px; }
-  }
+:root{--red:#DA0027;--red-dark:#A8001D;--white:#FFFFFF;--gray-50:#F8F9FA;--gray-100:#F1F3F5;--gray-200:#E9ECEF;--gray-300:#DEE2E6;--gray-400:#CED4DA;--gray-500:#ADB5BD;--gray-600:#6C757D;--gray-700:#495057;--gray-800:#343A40;--gray-900:#212529;--green:#16A34A;--green-light:#DCFCE7;--orange:#EA580C;--blue:#2563EB;--blue-light:#EFF6FF;--shadow-sm:0 1px 3px rgba(0,0,0,0.08);--shadow:0 2px 8px rgba(0,0,0,0.10);--radius:12px;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Barlow',sans-serif;background:var(--gray-50);color:var(--gray-900);min-height:100vh;}
+.header{background:var(--white);border-bottom:3px solid var(--red);padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:64px;position:sticky;top:0;z-index:100;box-shadow:var(--shadow-sm);}
+.logo-box{background:var(--red);color:white;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:22px;padding:6px 14px;letter-spacing:1px;border-radius:6px;}
+.header-brand{display:flex;align-items:center;gap:14px;}
+.header-title{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:18px;color:var(--gray-800);}
+.header-title span{color:var(--red);}
+.header-right{display:flex;align-items:center;gap:12px;}
+.sync-badge{display:flex;align-items:center;gap:7px;background:var(--gray-100);border:1px solid var(--gray-200);border-radius:20px;padding:5px 13px;font-size:12px;color:var(--gray-600);}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.5;transform:scale(0.8);}}
+.last-update{font-size:11px;color:var(--gray-500);text-align:center;margin-top:3px;}
+.btn{background:var(--red);color:white;border:none;border-radius:8px;padding:7px 16px;font-family:'Barlow',sans-serif;font-weight:600;font-size:13px;cursor:pointer;transition:background 0.2s;}
+.btn:hover{background:var(--red-dark);}
+.btn.gray{background:var(--gray-700);}
+.btn.blue{background:var(--blue);font-size:11px;}
+.btn.loading{opacity:0.7;pointer-events:none;}
+.nav-tabs{background:var(--white);border-bottom:1px solid var(--gray-200);padding:0 32px;display:flex;gap:4px;}
+.tab-btn{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;letter-spacing:0.5px;padding:14px 22px;border:none;background:transparent;color:var(--gray-500);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px;transition:all 0.2s;text-transform:uppercase;}
+.tab-btn.active{color:var(--red);border-bottom-color:var(--red);}
+.page{display:none;padding:28px 32px;}
+.page.active{display:block;}
+.section-title{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:22px;color:var(--gray-800);letter-spacing:0.5px;margin-bottom:20px;display:flex;align-items:center;gap:10px;}
+.section-title::after{content:'';flex:1;height:2px;background:var(--gray-200);margin-left:8px;}
+.badge{background:var(--red);color:white;font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600;}
+.kpi-grid{display:grid;gap:16px;margin-bottom:24px;}
+.g6{grid-template-columns:repeat(6,1fr);}
+.g4{grid-template-columns:repeat(4,1fr);}
+.g3{grid-template-columns:repeat(3,1fr);}
+.kpi-card{background:var(--white);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow-sm);border:1px solid var(--gray-200);position:relative;overflow:hidden;}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--accent,var(--red));}
+.kpi-card.red{--accent:var(--red);}
+.kpi-card.blue{--accent:var(--blue);}
+.kpi-card.green{--accent:var(--green);}
+.kpi-card.orange{--accent:var(--orange);}
+.kpi-card.gray{--accent:var(--gray-400);}
+.kpi-label{font-size:11px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:var(--gray-500);margin-bottom:8px;}
+.kpi-value{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:36px;color:var(--gray-900);line-height:1;margin-bottom:4px;}
+.kpi-sub{font-size:12px;color:var(--gray-500);}
+.chart-card{background:var(--white);border-radius:var(--radius);padding:22px 24px;box-shadow:var(--shadow-sm);border:1px solid var(--gray-200);margin-bottom:24px;}
+.chart-title{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;color:var(--gray-800);margin-bottom:16px;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.table-card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow-sm);border:1px solid var(--gray-200);overflow:hidden;margin-bottom:24px;}
+.table-card-header{padding:16px 20px;border-bottom:1px solid var(--gray-200);display:flex;align-items:center;justify-content:space-between;}
+.table-card-title{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;color:var(--gray-800);}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead th{background:var(--gray-50);padding:10px 14px;text-align:left;font-size:11px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;color:var(--gray-500);border-bottom:1px solid var(--gray-200);}
+tbody tr{border-bottom:1px solid var(--gray-100);}
+tbody tr:hover{background:var(--gray-50);}
+tbody td{padding:10px 14px;color:var(--gray-800);}
+.tc{text-align:center;}
+.tb{font-weight:700;font-family:'Barlow Condensed',sans-serif;font-size:15px;}
+.pill{display:inline-flex;align-items:center;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;}
+.pill-d{background:var(--blue-light);color:var(--blue);}
+.pill-r{background:#FEE2E2;color:#DC2626;}
+.pill-n{background:var(--green-light);color:var(--green);}
+.estado-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;}
+.estado-card{border-radius:var(--radius);padding:16px 20px;display:flex;align-items:center;gap:16px;}
+.estado-card.d{background:var(--blue-light);border:1px solid #BFDBFE;}
+.estado-card.r{background:#FEE2E2;border:1px solid #FECACA;}
+.estado-card.n{background:var(--green-light);border:1px solid #BBF7D0;}
+.estado-icon{font-size:28px;}
+.estado-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;margin-bottom:4px;}
+.d .estado-label{color:var(--blue);}
+.r .estado-label{color:#DC2626;}
+.n .estado-label{color:var(--green);}
+.estado-num{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:32px;line-height:1;}
+.d .estado-num{color:var(--blue);}
+.r .estado-num{color:#DC2626;}
+.n .estado-num{color:var(--green);}
+.estado-pct{font-size:12px;color:var(--gray-500);}
+.jefe-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:24px;}
+.jefe-card{background:var(--white);border-radius:var(--radius);border:1px solid var(--gray-200);box-shadow:var(--shadow-sm);overflow:hidden;}
+.jefe-header{background:var(--red);color:white;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;}
+.jefe-name{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:16px;}
+.jefe-total{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:28px;}
+.jefe-body{padding:14px 18px;}
+.jefe-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--gray-100);font-size:13px;}
+.jefe-row:last-child{border-bottom:none;}
+.jefe-row-label{color:var(--gray-600);}
+.jefe-row-val{font-weight:700;color:var(--gray-800);}
+.pbar-wrap{display:flex;align-items:center;gap:10px;}
+.pbar-bg{flex:1;height:6px;background:var(--gray-200);border-radius:10px;overflow:hidden;}
+.pbar-fill{height:100%;border-radius:10px;background:var(--red);}
+.pbar-pct{font-size:12px;font-weight:700;color:var(--red);min-width:36px;text-align:right;}
+.coord-selector{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:24px;}
+.coord-btn{border:2px solid var(--gray-200);background:var(--white);border-radius:8px;padding:8px 16px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;cursor:pointer;transition:all 0.2s;color:var(--gray-700);}
+.coord-btn.active{border-color:var(--red);background:var(--red);color:white;}
+.filters-row{display:flex;gap:12px;margin-bottom:20px;align-items:center;flex-wrap:wrap;}
+.filter-select{border:1px solid var(--gray-300);border-radius:8px;padding:8px 14px;font-family:'Barlow',sans-serif;font-size:13px;color:var(--gray-700);background:var(--white);cursor:pointer;outline:none;}
+.filter-label{font-size:12px;font-weight:600;color:var(--gray-600);text-transform:uppercase;letter-spacing:0.5px;}
+.rank-num{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:16px;color:var(--gray-400);width:24px;}
+.rank-num.top{color:var(--red);}
+.asesor-name{font-weight:600;font-size:13px;}
+.asesor-cedula{font-size:11px;color:var(--gray-500);}
+.h200{height:200px;}
+.loading-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 40px;gap:16px;}
+.spinner{width:40px;height:40px;border:3px solid var(--gray-200);border-top-color:var(--red);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-text{font-size:14px;color:var(--gray-500);}
+.error-box{background:#FEF2F2;border:1px solid #FECACA;border-radius:var(--radius);padding:20px 24px;margin:16px 0;color:#DC2626;font-size:14px;}
+.error-box strong{display:block;margin-bottom:6px;font-size:15px;}
+.empty-state{text-align:center;padding:40px;color:var(--gray-400);font-size:14px;}
+.ctag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;}
+.ctag-d{background:#EDE9FE;color:#7C3AED;}
+.ctag-g{background:#FEF3C7;color:#D97706;}
+@media(max-width:1200px){.g6{grid-template-columns:repeat(3,1fr);}.jefe-grid{grid-template-columns:1fr 1fr;}.grid-2{grid-template-columns:1fr;}}
+@media(max-width:768px){.g6,.g4,.g3{grid-template-columns:repeat(2,1fr);}.jefe-grid,.estado-row{grid-template-columns:1fr;}.header{padding:0 16px;}.page{padding:20px 16px;}}
 </style>
 </head>
 <body>
-
-<!-- HEADER -->
 <header class="header">
   <div class="header-brand">
     <div class="logo-box">CLARO</div>
     <div>
       <div class="header-title">CORTE <span>OUTBOUND MÓVIL</span></div>
-      <div style="font-size:11px;color:var(--gray-500);margin-top:1px;">Portabilidad · Migración · Línea Nueva <span style="color:var(--red);font-weight:700;">v2.0</span></div>
+      <div style="font-size:11px;color:var(--gray-500);margin-top:1px;">Portabilidad · Migración · Línea Nueva <span style="color:var(--red);font-weight:700;">v3.0</span></div>
     </div>
   </div>
   <div class="header-right">
     <div>
-      <div class="sync-badge">
-        <div class="sync-dot" id="syncDot"></div>
-        <span id="syncStatus">Conectando...</span>
-      </div>
-      <div class="last-update" style="margin-top:4px;text-align:center;" id="lastUpdate">—</div>
+      <div class="sync-badge"><div class="sync-dot" id="syncDot"></div><span id="syncStatus">Conectando...</span></div>
+      <div class="last-update" id="lastUpdate">—</div>
     </div>
-    <button class="btn-refresh" id="btnRefresh" onclick="loadData()">
-      ↻ Actualizar
-    </button>
-    <button class="btn-refresh" style="background:var(--gray-700);" onclick="toggleConfig()">
-      ⚙ Configurar
-    </button>
-    <button class="btn-refresh" style="background:var(--blue);font-size:11px;" onclick="debugData()">
-      🔍 Debug
-    </button>
+    <button class="btn" id="btnRefresh" onclick="loadData()">↻ Actualizar</button>
+    <button class="btn blue" onclick="runDebug()">🔍 Debug</button>
   </div>
 </header>
-
-<!-- CONFIG PANEL -->
-<div style="padding:0 32px;">
-  <div class="config-panel" id="configPanel">
-    <div class="config-title">⚙ Configuración — Hoja COORDINADORES</div>
-    <div class="config-row">
-      <div class="config-group">
-        <label>GID de la pestaña COORDINADORES (número al final de la URL de esa hoja)</label>
-        <input class="config-input" id="coordGidInput" type="text" placeholder="Ej: 1234567890 — lo encuentras en la URL al abrir esa pestaña">
-      </div>
-      <button class="btn-config" onclick="saveCoordGid()">Guardar y recargar</button>
-    </div>
-    <div style="font-size:12px;color:#92400E;margin-top:10px;">
-      📋 <strong>Cómo encontrar el GID:</strong> Abre tu Google Sheets → haz clic en la pestaña <strong>COORDINADORES</strong> → mira la URL del navegador → al final verás <code>gid=XXXXXXXXXX</code> → copia ese número aquí.<br>
-      <br>✅ La hoja de ventas ya está conectada automáticamente.
-    </div>
-  </div>
-</div>
-
-<!-- NAV TABS -->
 <nav class="nav-tabs">
   <button class="tab-btn active" onclick="showTab('general')">📊 Dashboard General</button>
   <button class="tab-btn" onclick="showTab('coordinador')">👤 Por Coordinador</button>
   <button class="tab-btn" onclick="showTab('asesor')">🏆 Por Asesor</button>
 </nav>
-
-<!-- ══════════════════════════════════════════════ -->
-<!-- PAGE 1: GENERAL -->
-<!-- ══════════════════════════════════════════════ -->
-<div class="page active" id="page-general">
-  <div id="general-content">
-    <div class="loading-screen">
-      <div class="spinner"></div>
-      <div class="loading-text">Cargando datos desde Google Sheets...</div>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════════ -->
-<!-- PAGE 2: COORDINADOR -->
-<!-- ══════════════════════════════════════════════ -->
-<div class="page" id="page-coordinador">
-  <div id="coord-content">
-    <div class="loading-screen">
-      <div class="spinner"></div>
-      <div class="loading-text">Cargando coordinadores...</div>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════════ -->
-<!-- PAGE 3: ASESOR -->
-<!-- ══════════════════════════════════════════════ -->
-<div class="page" id="page-asesor">
-  <div id="asesor-content">
-    <div class="loading-screen">
-      <div class="spinner"></div>
-      <div class="loading-text">Cargando asesores...</div>
-    </div>
-  </div>
-</div>
+<div class="page active" id="page-general"><div id="general-content"><div class="loading-screen"><div class="spinner"></div><div class="loading-text">Cargando datos...</div></div></div></div>
+<div class="page" id="page-coordinador"><div id="coord-content"><div class="loading-screen"><div class="spinner"></div><div class="loading-text">Cargando...</div></div></div></div>
+<div class="page" id="page-asesor"><div id="asesor-content"><div class="loading-screen"><div class="spinner"></div><div class="loading-text">Cargando...</div></div></div></div>
 
 <script>
-// ═══════════════════════════════════════════════════
-// CONFIGURATION
-// ═══════════════════════════════════════════════════
+// ══════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════
 const BASE_ID = '2PACX-1vQgHotPl_7xflR7eYjPW0oUpeNCfnXkIs1oWWnitfjFhxBcuhNn1jzP6LXBYk9yZsDwFBnEzUZAN02N';
-const SHEET_CSV_BASE = `https://docs.google.com/spreadsheets/d/e/${BASE_ID}/pub?output=csv`;
-const CONFIG = {
-  sheetUrl: SHEET_CSV_BASE,           // hoja 0 = ventas (gid por defecto)
-  coordGid: localStorage.getItem('claro_coord_gid') || '1133515436',  // gid hoja COORDINADORES
-  refreshInterval: 30 * 60 * 1000,   // 30 min
-};
+const CSV_BASE = 'https://docs.google.com/spreadsheets/d/e/' + BASE_ID + '/pub?output=csv';
+const COORD_GID = '1133515436';
+const REFRESH_MS = 30 * 60 * 1000;
 
-const CAMPANAS = ['PORTABILIDAD', 'MIGRACION BK'];
+const CAMPANAS  = ['PORTABILIDAD','MIGRACION BK'];
 const PRODUCTOS = ['MIGRACION','MIGRACION POWER','LINEA NUEVA','LINEA NUEVA POWER','PORTABILIDAD','PORTABILIDAD POWER'];
-const ESTADOS = {
-  DIGITADO: ['EN LEGALIZACION NUEVO','EN PROCESO DE ACTIVACION','LEGALIZACION GRABACION','PENDIENTE ENTREGA SIM'],
-  RECHAZO: ['ALARMA POR PROCESO INCORRECTO','ALERTA FRAUDE PQRS','ANULADO','RECHAZO DIGITACION'],
-  NUEVA: ['SEGUIMIENTO DIGITACION','RE-DIGITADACION','NUEVA','EN DIGITACION']
-};
-// Pre-normalized versions for comparison
-const CAMPANAS_N  = ['PORTABILIDAD', 'MIGRACION BK']; // exact after normalize
-const PRODUCTOS_N = ['MIGRACION','MIGRACION POWER','LINEA NUEVA','LINEA NUEVA POWER','PORTABILIDAD','PORTABILIDAD POWER'];
-const ESTADOS_N = {
-  DIGITADO: ['EN LEGALIZACION NUEVO','EN PROCESO DE ACTIVACION','LEGALIZACION GRABACION','PENDIENTE ENTREGA SIM'],
-  RECHAZO:  ['ALARMA POR PROCESO INCORRECTO','ALERTA FRAUDE PQRS','ANULADO','RECHAZO DIGITACION'],
-  NUEVA:    ['SEGUIMIENTO DIGITACION','RE-DIGITADACION','NUEVA','EN DIGITACION'],
-};
-const CONTRATOS = ['CONTRATO DIGITAL','CONTRATO GRABADO'];
+const EST_DIGITADO = ['EN LEGALIZACION NUEVO','EN PROCESO DE ACTIVACION','LEGALIZACION GRABACION','PENDIENTE ENTREGA SIM'];
+const EST_RECHAZO  = ['ALARMA POR PROCESO INCORRECTO','ALERTA FRAUDE PQRS','ANULADO','RECHAZO DIGITACION'];
+const EST_NUEVA    = ['SEGUIMIENTO DIGITACION','RE-DIGITACION','RE-DIGITADACION','NUEVA','EN DIGITACION'];
 
-// Charts registry
-let charts = {};
+// Column indices (Y=24, V=21, U=20, Z=25, AC=28, AD=29, O=14, P=15)
+let COL = {tc:24, pr:21, es:20, ct:25, fv:28, fd:29, ce:14, nu:15};
 
-function destroyChart(id) {
-  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
-}
-
-// ═══════════════════════════════════════════════════
-// TAB NAVIGATION
-// ═══════════════════════════════════════════════════
-function showTab(tab) {
-  document.querySelectorAll('.tab-btn').forEach((b,i) => {
-    b.classList.toggle('active', ['general','coordinador','asesor'][i] === tab);
-  });
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById('page-'+tab).classList.add('active');
-}
-
-function saveCoordGid() {
-  const gid = document.getElementById('coordGidInput').value.trim();
-  if (gid) {
-    CONFIG.coordGid = gid;
-    localStorage.setItem('claro_coord_gid', gid);
-    loadData();
-    document.getElementById('configPanel').classList.remove('show');
-  }
-}
-
-function toggleConfig() {
-  const p = document.getElementById('configPanel');
-  p.classList.toggle('show');
-  if (p.classList.contains('show') && CONFIG.coordGid) {
-    document.getElementById('coordGidInput').value = CONFIG.coordGid;
-  }
-}
-
-// ═══════════════════════════════════════════════════
-// DATA LOADING
-// ═══════════════════════════════════════════════════
-let rawData = [];
-let coordData = {};
-let allLoaded = false;
-
-// Proxy CORS — intenta múltiples proxies en cascada
-async function fetchWithProxy(url) {
-  const proxies = [
-    u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
-    u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
-    u => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
-  ];
-  let lastErr;
-  for (const proxy of proxies) {
-    try {
-      const r = await fetch(proxy(url), { cache: 'no-store' });
-      if (r.ok) {
-        const text = await r.text();
-        if (text && text.length > 10 && !text.startsWith('<!')) return text;
-      }
-    } catch(e) { lastErr = e; }
-  }
-  throw lastErr || new Error('Todos los proxies fallaron');
-}
-
-async function loadData() {
-  const btn = document.getElementById('btnRefresh');
-  btn.classList.add('loading');
-  btn.textContent = '↻ Cargando...';
-  setSyncStatus('loading');
-
-  try {
-    // ── Cargar hoja de ventas (primera hoja, gid por defecto) ──
-    const ventasUrl = SHEET_CSV_BASE; // sin gid = primera hoja
-    const text = await fetchWithProxy(ventasUrl);
-    rawData = parseCSV(text);
-
-    if (rawData.length === 0) throw new Error('La hoja está vacía o no se pudo leer');
-    // Detect columns from header row (index 0 has both named and positional keys)
-    detectColumns(rawData[0]);
-
-    // ── Cargar hoja COORDINADORES ──
-    // Intentar con gid guardado, luego probar gids comunes
-    const gidsToTry = CONFIG.coordGid
-      ? [CONFIG.coordGid, '1133515436']
-      : ['1133515436','1','2','3','4','5'];
-
-    for (const gid of gidsToTry) {
-      try {
-        const coordUrl = `${SHEET_CSV_BASE}&gid=${gid}`;
-        const ct = await fetchWithProxy(coordUrl);
-        const rows = parseCSV(ct);
-        // Verificar que tiene columna de coordinador
-        const headers = Object.keys(rows[0] || {}).map(h => h.toUpperCase());
-        const hasCoord = headers.some(h => h.includes('COORDINADOR') || h.includes('COORD'));
-        if (hasCoord && rows.length > 1) {
-          coordData = parseCoordSheet(rows);
-          localStorage.setItem('claro_coord_gid', gid);
-          break;
-        }
-      } catch(e) { /* intentar siguiente gid */ }
-    }
-
-    allLoaded = true;
-    setSyncStatus('ok');
-    document.getElementById('lastUpdate').textContent = 'Actualizado: ' + new Date().toLocaleTimeString('es-CO');
-    renderAll();
-  } catch(e) {
-    setSyncStatus('error');
-    showError(e.message);
-  }
-
-  btn.classList.remove('loading');
-  btn.textContent = '↻ Actualizar';
-}
-
-function setSyncStatus(s) {
-  const dot = document.getElementById('syncDot');
-  const st = document.getElementById('syncStatus');
-  if (s === 'ok') {
-    dot.style.background = '#16A34A';
-    st.textContent = 'En línea · Auto 30m';
-  } else if (s === 'error') {
-    dot.style.background = '#DC2626';
-    st.textContent = 'Error de conexión';
-  } else {
-    dot.style.background = '#D97706';
-    st.textContent = 'Cargando...';
-  }
-}
-
-// ═══════════════════════════════════════════════════
-// CSV PARSER
-// ═══════════════════════════════════════════════════
-function parseCSV(text) {
-  const lines = text.split('\n').filter(l => l.trim());
-  if (!lines.length) return [];
-  const headers = splitCSVLine(lines[0]).map(h => h.trim().toUpperCase());
-  const rows = [];
-  for (let i = 1; i < lines.length; i++) {
-    const vals = splitCSVLine(lines[i]);
-    if (vals.every(v => !v.trim())) continue; // skip empty rows
-    // Store ONLY by numeric index — avoid mixing named+numeric keys
-    const row = vals.map(v => (v || '').trim());
-    // Also attach headers map for coord sheet parsing
-    row._headers = headers;
-    rows.push(row);
-  }
-  return rows;
-}
-
-function splitCSVLine(line) {
-  const result = [];
-  let current = '';
-  let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    const c = line[i];
-    if (c === '"') { inQuotes = !inQuotes; }
-    else if (c === ',' && !inQuotes) { result.push(current); current = ''; }
-    else { current += c; }
-  }
-  result.push(current);
-  return result;
-}
-
-function parseCoordSheet(rows) {
-  // Columnas: A(0)=CEDULA, B(1)=NOMBRE ASESOR, C(2)=COORDINADOR,
-  // D(3)=FECHA, E(4)=ANTIGUEDAD, F(5)=ESTADO, G(6)=JEFE DE OPERACION
-  const map = {};
-  rows.forEach(r => {
-    const cedula = (r[0] || '').toString().trim();
-    if (!cedula || cedula.toUpperCase() === 'CEDULA' || cedula.toUpperCase() === 'CÉDULA') return;
-    map[cedula] = {
-      nombreAsesor: (r[1] || '').toString().trim(),
-      coordinador:  (r[2] || '').toString().trim() || 'Sin coordinador',
-      antiguedad:   (r[4] || '').toString().trim(),
-      estado:       (r[5] || '').toString().trim(),
-      jefe:         (r[6] || '').toString().trim() || 'Sin jefe',
-      campana:      (r[7] || '').toString().trim(),
-    };
-  });
-  return map;
-}
-
-// ═══════════════════════════════════════════════════
-// DATA PROCESSING
-// ═══════════════════════════════════════════════════
-function colIndex(letter) {
-  // A=0, B=1, ... Z=25, AA=26...
-  let result = 0;
-  letter = letter.toUpperCase();
-  for (let i = 0; i < letter.length; i++) {
-    result = result * 26 + (letter.charCodeAt(i) - 64);
-  }
-  return result - 1;
-}
-
-function getField(row, letter) {
-  // Try by column letter (key like "COL_U") OR by header name
-  const keys = Object.keys(row);
-  const idx = colIndex(letter);
-  if (keys[idx] !== undefined) return row[keys[idx]] || '';
-  return '';
-}
-
-function normalize(str) {
-  return (str || '').toString().trim()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .toUpperCase()
-    .replace(/\s+/g, ' ');
-}
-
-// Column indices — confirmed from sheet headers
-// Y(24)=TIPO CAMPAÑA, V(21)=PRODUCTO, U(20)=ESTADO SERVICIO
-// Z(25)=TIPO CONTRATO, AC(28)=FECHA VENTA, AD(29)=FECHA DIGITACION
-// O(14)=CEDULA VENDEDOR, P(15)=NOMBRE USUARIO
-const COL = {
-  tipoCampana: 24, producto: 21, estadoServ: 20,
-  tipoContrato: 25, fechaVenta: 28, fechaDigit: 29,
-  cedula: 14, nombreUser: 15
-};
-
-function detectColumns(firstRow) {
-  // Verify indices by checking header names, adjust if needed
-  const vals = Object.values(firstRow);
-  const tryFind = (keywords) => {
-    for (let i = 0; i < vals.length; i++) {
-      const n = normalize(vals[i] || '');
-      if (keywords.some(k => n.includes(k))) return i;
-    }
-    return -1;
-  };
-  // Only override if found at different position
-  const tc = tryFind(['TIPO CAMPAN']); if (tc >= 0) COL.tipoCampana = tc;
-  const pr = tryFind(['PRODUCTO']);    if (pr >= 0) COL.producto = pr;
-  const es = tryFind(['ESTADO SERV']); if (es >= 0) COL.estadoServ = es;
-  const ti = tryFind(['TIPO CONTR']); if (ti >= 0) COL.tipoContrato = ti;
-  const fv = tryFind(['FECHA VENT']); if (fv >= 0) COL.fechaVenta = fv;
-  const fd = tryFind(['FECHA DIG']);  if (fd >= 0) COL.fechaDigit = fd;
-  const ce = tryFind(['CEDULA VEN']); if (ce >= 0) COL.cedula = ce;
-  const nu = tryFind(['NOMBRE USU']); if (nu >= 0) COL.nombreUser = nu;
-  console.log('COL indices:', JSON.stringify(COL));
-  console.log('Headers sample:', Object.values(firstRow).slice(0,5));
-}
-
-function processRow(row) {
-  const get    = (i) => normalize(row[i]);
-  const getRaw = (i) => (row[i] || '').toString().trim();
-  return {
-    tipoCampana:  get(COL.tipoCampana),
-    producto:     get(COL.producto),
-    estadoServ:   get(COL.estadoServ),
-    tipoContrato: get(COL.tipoContrato),
-    fechaVenta:   getRaw(COL.fechaVenta),
-    fechaDigit:   getRaw(COL.fechaDigit),
-    cedula:       get(COL.cedula),
-    nombreUser:   getRaw(COL.nombreUser),
-  };
-}
-
-function getEstadoGroup(estado) {
-  const e = (estado||'').toString().trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/\s+/g,' ');
-  if (ESTADOS_N.DIGITADO.includes(e)) return 'DIGITADO';
-  if (ESTADOS_N.RECHAZO.includes(e))  return 'RECHAZO';
-  if (ESTADOS_N.NUEVA.includes(e))    return 'NUEVA';
+// ══════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════
+function norm(s){ return (s||'').toString().trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/\s+/g,' '); }
+function today(){ const n=new Date(); return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0'); }
+function isToday(s){ return (s||'').toString().startsWith(today()); }
+function estadoGroup(e){
+  const n=norm(e);
+  if(EST_DIGITADO.map(norm).includes(n)) return 'D';
+  if(EST_RECHAZO.map(norm).includes(n))  return 'R';
+  if(EST_NUEVA.map(norm).includes(n))    return 'N';
   return null;
 }
+function countBy(arr,k){ const m={}; arr.forEach(r=>{m[r[k]]=(m[r[k]]||0)+1;}); return m; }
+function groupBy(arr,k){ const m={}; arr.forEach(r=>{if(!m[r[k]])m[r[k]]={};m[r[k]][r.producto]=(m[r[k]][r.producto]||0)+1;}); return m; }
 
-function getTodayStr() {
-  const now = new Date();
-  const d = String(now.getDate()).padStart(2,'0');
-  const m = String(now.getMonth()+1).padStart(2,'0');
-  const y = now.getFullYear();
-  // Return multiple formats to match whatever the sheet uses
-  return {
-    ddmmyyyy: `${d}/${m}/${y}`,
-    mmddyyyy: `${m}/${d}/${y}`,
-    yyyymmdd: `${y}-${m}-${d}`,
-    ddmmyyyy2: `${d}-${m}-${y}`,
-    day: String(now.getDate()),
-    month: String(now.getMonth()+1),
-    year: String(y),
-    d, m, y: String(y)
-  };
+// ══════════════════════════════════════
+// CSV PARSER — returns array of arrays
+// ══════════════════════════════════════
+function parseCSV(text){
+  const lines = text.replace(/\r/g,'').split('\n').filter(l=>l.trim());
+  if(!lines.length) return {headers:[], rows:[]};
+  const headers = splitLine(lines[0]).map(h=>norm(h));
+  const rows = [];
+  for(let i=1;i<lines.length;i++){
+    const v = splitLine(lines[i]);
+    if(v.every(x=>!x.trim())) continue;
+    rows.push(v.map(x=>(x||'').trim()));
+  }
+  return {headers, rows};
 }
 
-function isToday(dateStr) {
-  if (!dateStr) return false;
-  const s = dateStr.toString().trim();
-  // Format is yyyy-mm-dd hh:mm:ss — just check the first 10 chars
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth()+1).padStart(2,'0');
-  const d = String(now.getDate()).padStart(2,'0');
-  const todayPrefix = y + '-' + m + '-' + d;
-  return s.startsWith(todayPrefix);
+function splitLine(line){
+  const res=[]; let cur='',inQ=false;
+  for(let i=0;i<line.length;i++){
+    const c=line[i];
+    if(c==='"'){inQ=!inQ;}
+    else if(c===','&&!inQ){res.push(cur);cur='';}
+    else{cur+=c;}
+  }
+  res.push(cur);
+  return res;
 }
 
-function filterRelevant(rows) {
-  return rows.filter(row => {
-    const p = processRow(row);
-    const campanaOk  = p.tipoCampana === 'PORTABILIDAD' || p.tipoCampana === 'MIGRACION BK';
-    const productoOk = PRODUCTOS_N.includes(p.producto);
-    if (!campanaOk || !productoOk) return false;
-    const estadoGroup = getEstadoGroup(p.estadoServ);
-    if (!estadoGroup) return false;
-    // Use fechaVenta for all — always populated
-    // For DIGITADO also accept if fechaDigit is today (in case fechaVenta is from yesterday)
-    const fechaOk = isToday(p.fechaVenta) || isToday(p.fechaDigit);
-    return fechaOk;
+// Auto-detect columns from headers
+function detectCols(headers){
+  headers.forEach((h,i)=>{
+    if(h.includes('TIPO CAMPAN')) COL.tc=i;
+    else if(h==='PRODUCTO') COL.pr=i;
+    else if(h.includes('ESTADO SERV')) COL.es=i;
+    else if(h.includes('TIPO CONTR')) COL.ct=i;
+    else if(h.includes('FECHA VENT')) COL.fv=i;
+    else if(h.includes('FECHA DIG')) COL.fd=i;
+    else if(h.includes('CEDULA VEND')) COL.ce=i;
+    else if(h.includes('NOMBRE USUA')) COL.nu=i;
   });
+  console.log('v3 COL detected:', JSON.stringify(COL), '| today:', today());
 }
 
-function buildDataset() {
-  const filtered = filterRelevant(rawData);
-  const result = [];
-
-  filtered.forEach(row => {
-    const p = processRow(row);
-    const estadoGroup = getEstadoGroup(p.estadoServ);
-    if (!estadoGroup) return;
-
-    // Coordinator lookup
-    const coordInfo = coordData[p.cedula] || {
-      coordinador: 'Sin coordinador',
-      jefe: 'Sin jefe',
-      antiguedad: '',
-      nombreAsesor: p.nombreUser
-    };
-
-    // Normalize producto — exact match only
-    const prodIdx = PRODUCTOS_N.indexOf(p.producto);
-    const prodNorm = prodIdx >= 0 ? PRODUCTOS[prodIdx] : null;
-    if (!prodNorm) return;
-
-    result.push({
-      cedula: p.cedula,
-      nombre: coordInfo.nombreAsesor || p.nombreUser,
-      coordinador: coordInfo.coordinador,
-      jefe: coordInfo.jefe,
-      antiguedad: coordInfo.antiguedad,
-      producto: prodNorm,
-      estadoGroup,
-      estadoRaw: p.estadoServ,
-      contrato: p.tipoContrato.includes('DIGITAL') ? 'CONTRATO DIGITAL' : p.tipoContrato.includes('GRABADO') ? 'CONTRATO GRABADO' : p.tipoContrato,
-      fechaVenta: p.fechaVenta,
-      fechaDigit: p.fechaDigit,
-    });
-  });
-
-  return result;
+// ══════════════════════════════════════
+// FETCH WITH PROXY
+// ══════════════════════════════════════
+async function fetchCSV(url){
+  const proxies=[
+    u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u),
+    u=>'https://corsproxy.io/?'+encodeURIComponent(u),
+    u=>'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(u),
+  ];
+  for(const p of proxies){
+    try{
+      const r=await fetch(p(url),{cache:'no-store'});
+      if(r.ok){
+        const t=await r.text();
+        if(t&&t.length>50&&!t.startsWith('<!')) return t;
+      }
+    }catch(e){console.warn('proxy failed',e);}
+  }
+  throw new Error('No se pudo conectar con Google Sheets. Verifica que la hoja esté publicada públicamente.');
 }
 
-// ═══════════════════════════════════════════════════
+// ══════════════════════════════════════
+// DATA
+// ══════════════════════════════════════
+let ventasRows = [];  // array of arrays
+let coordMap   = {};  // cedula -> {coordinador, jefe, antiguedad, nombreAsesor}
+let dataset    = [];  // processed rows for today
+
+async function loadData(){
+  const btn=document.getElementById('btnRefresh');
+  btn.classList.add('loading'); btn.textContent='↻ Cargando...';
+  setSyncStatus('loading');
+  try{
+    // Load ventas
+    const vText = await fetchCSV(CSV_BASE);
+    const {headers, rows} = parseCSV(vText);
+    detectCols(headers);
+    ventasRows = rows;
+    console.log('v3 ventasRows:', ventasRows.length, '| sample[0][COL.tc]:', ventasRows[0]?.[COL.tc]);
+
+    // Load coordinadores
+    try{
+      const cText = await fetchCSV(CSV_BASE+'&gid='+COORD_GID);
+      const {rows:cRows} = parseCSV(cText);
+      coordMap={};
+      cRows.forEach(r=>{
+        const ced=(r[0]||'').trim();
+        if(ced && norm(ced)!=='CEDULA'){
+          coordMap[ced]={nombreAsesor:(r[1]||'').trim(), coordinador:(r[2]||'').trim()||'Sin coordinador', antiguedad:(r[4]||'').trim(), jefe:(r[6]||'').trim()||'Sin jefe'};
+        }
+      });
+      console.log('v3 coordMap entries:', Object.keys(coordMap).length);
+    }catch(e){console.warn('coord sheet error',e);}
+
+    // Build dataset for today
+    buildDataset();
+    setSyncStatus('ok');
+    document.getElementById('lastUpdate').textContent='Actualizado: '+new Date().toLocaleTimeString('es-CO');
+    renderAll();
+  }catch(e){
+    setSyncStatus('error');
+    showError(e.message);
+    console.error(e);
+  }
+  btn.classList.remove('loading'); btn.textContent='↻ Actualizar';
+}
+
+function buildDataset(){
+  const t = today();
+  dataset = [];
+  let skCamp=0, skProd=0, skEst=0, skFecha=0, ok=0;
+  for(const row of ventasRows){
+    const campana  = norm(row[COL.tc]||'');
+    const producto = norm(row[COL.pr]||'');
+    const estado   = norm(row[COL.es]||'');
+    const contrato = norm(row[COL.ct]||'');
+    const fventa   = (row[COL.fv]||'').trim();
+    const fdigit   = (row[COL.fd]||'').trim();
+    const cedula   = norm(row[COL.ce]||'');
+    const nombre   = (row[COL.nu]||'').trim();
+
+    if(!CAMPANAS.map(norm).includes(campana)){skCamp++;continue;}
+    const prodNorm = PRODUCTOS.find(p=>norm(p)===producto);
+    if(!prodNorm){skProd++;continue;}
+    const eg = estadoGroup(estado);
+    if(!eg){skEst++;continue;}
+    if(!fventa.startsWith(t) && !fdigit.startsWith(t)){skFecha++;continue;}
+
+    const coord = coordMap[cedula]||{nombreAsesor:nombre,coordinador:'Sin coordinador',jefe:'Sin jefe',antiguedad:''};
+    const cNorm = contrato.includes('DIGITAL')?'CONTRATO DIGITAL':contrato.includes('GRABADO')?'CONTRATO GRABADO':contrato;
+
+    ok++;
+    dataset.push({cedula,nombre:coord.nombreAsesor||nombre,coordinador:coord.coordinador,jefe:coord.jefe,antiguedad:coord.antiguedad,producto:prodNorm,estadoGroup:eg,contrato:cNorm,fechaVenta:fventa,fechaDigit:fdigit});
+  }
+  console.log('v3 dataset:', ok, '| skipped camp:', skCamp, 'prod:', skProd, 'est:', skEst, 'fecha:', skFecha);
+}
+
+// ══════════════════════════════════════
+// DEBUG
+// ══════════════════════════════════════
+function runDebug(){
+  const t=today();
+  const camps={};
+  ventasRows.forEach(r=>{const v=(r[COL.tc]||'').trim();camps[v]=(camps[v]||0)+1;});
+  const topCamps=Object.entries(camps).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([k,v])=>'"'+k+'": '+v).join('\n');
+  const conHoy=ventasRows.filter(r=>(r[COL.fv]||'').startsWith(t)||(r[COL.fd]||'').startsWith(t)).length;
+  alert('=== DEBUG v3 ===\nTotal filas: '+ventasRows.length+'\nFecha hoy: '+t+'\nFilas con fecha hoy: '+conHoy+'\nDataset hoy: '+dataset.length+'\nCOL: '+JSON.stringify(COL)+'\n\nCampañas top:\n'+topCamps);
+}
+
+// ══════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════
+function setSyncStatus(s){
+  const dot=document.getElementById('syncDot'),st=document.getElementById('syncStatus');
+  if(s==='ok'){dot.style.background='#16A34A';st.textContent='En línea · Auto 30m';}
+  else if(s==='error'){dot.style.background='#DC2626';st.textContent='Error de conexión';}
+  else{dot.style.background='#D97706';st.textContent='Cargando...';}
+}
+function showError(msg){
+  const html='<div class="error-box"><strong>❌ Error al cargar datos</strong>'+msg+'</div>';
+  ['general-content','coord-content','asesor-content'].forEach(id=>document.getElementById(id).innerHTML=html);
+}
+function showTab(tab){
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',['general','coordinador','asesor'][i]===tab));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+tab).classList.add('active');
+}
+let charts={};
+function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+
+// ══════════════════════════════════════
 // RENDER ALL
-// ═══════════════════════════════════════════════════
-function debugData() {
-  if (!rawData.length) return;
-  // Sample first 5 rows — show col Y (24), col V (21), col U (20)
-  const sample = rawData.slice(0,5);
-  let msg = '=== DEBUG primeras 5 filas ===\n';
-  msg += 'Total filas crudas: ' + rawData.length + '\n\n';
-  sample.forEach((row, i) => {
-    msg += `Fila ${i+1}:\n`;
-    msg += `  Col Y(24) TIPO CAMPAÑA: "${row[24]}"\n`;
-    msg += `  Col V(21) PRODUCTO: "${row[21]}"\n`;
-    msg += `  Col U(20) ESTADO: "${row[20]}"\n`;
-    msg += `  Col O(14) CEDULA: "${row[14]}"\n`;
-  });
-  // Count unique campaigns
-  const camps = {};
-  rawData.forEach(r => { const v = (r[24]||'').trim(); camps[v] = (camps[v]||0)+1; });
-  msg += '\n=== Valores únicos columna Y (TIPO CAMPAÑA) ===\n';
-  Object.entries(camps).sort((a,b)=>b[1]-a[1]).slice(0,15).forEach(([k,v]) => {
-    msg += `  "${k}": ${v}\n`;
-  });
-  // Count unique products
-  const prods = {};
-  rawData.forEach(r => { const v = (r[21]||'').trim(); prods[v] = (prods[v]||0)+1; });
-  msg += '\n=== Valores únicos columna V (PRODUCTO) ===\n';
-  Object.entries(prods).sort((a,b)=>b[1]-a[1]).slice(0,15).forEach(([k,v]) => {
-    msg += `  "${k}": ${v}\n`;
-  });
-  alert(msg);
-}
+// ══════════════════════════════════════
+function renderAll(){ renderGeneral(); renderCoordinador(); renderAsesor(); }
 
-function renderAll() {
-  const ds = buildDataset();
-  renderGeneral(ds);
-  renderCoordinador(ds);
-  renderAsesor(ds);
-}
+// ── GENERAL ──
+function renderGeneral(){
+  const ds=dataset, total=ds.length;
+  const byProd=countBy(ds,'producto'), byEst=countBy(ds,'estadoGroup'), byCont=countBy(ds,'contrato');
+  const jefes=[...new Set(ds.map(r=>r.jefe))].filter(Boolean);
+  const jefeProds=groupBy(ds,'jefe');
 
-// ─── HELPERS ───
-function countBy(arr, key) {
-  const m = {};
-  arr.forEach(r => { m[r[key]] = (m[r[key]] || 0) + 1; });
-  return m;
-}
-function sumGroupBy(arr, groupKey, countKey) {
-  const m = {};
-  arr.forEach(r => {
-    const g = r[groupKey];
-    if (!m[g]) m[g] = {};
-    m[g][r[countKey]] = (m[g][r[countKey]] || 0) + 1;
-  });
-  return m;
-}
+  const estPct=(k)=>total?((byEst[k]||0)/total*100).toFixed(1)+'%':'—';
+  const prdPct=(k)=>total?((byProd[k]||0)/total*100).toFixed(1)+'%':'—';
 
-// ─────────────────────────────────
-// RENDER: GENERAL
-// ─────────────────────────────────
-function renderGeneral(ds) {
-  const totalVentas = ds.length;
-  const byProducto = countBy(ds, 'producto');
-  const byEstado = countBy(ds, 'estadoGroup');
-  const byJefe = countBy(ds, 'jefe');
-  const byContrato = countBy(ds, 'contrato');
-  const jefeProds = sumGroupBy(ds, 'jefe', 'producto');
-
-  const jefes = [...new Set(ds.map(r => r.jefe))].filter(Boolean);
-
-  let html = `
-  <div class="section-title">
-    RESUMEN GENERAL DEL DÍA
-    <span class="badge">LIVE</span>
+  document.getElementById('general-content').innerHTML=`
+  <div class="section-title">RESUMEN GENERAL DEL DÍA <span class="badge">LIVE</span></div>
+  <div class="kpi-grid g6">
+    ${PRODUCTOS.map(p=>`<div class="kpi-card ${p.includes('PORT')?'red':p.includes('MIGRA')?'blue':'green'}"><div class="kpi-label">${p}</div><div class="kpi-value">${byProd[p]||0}</div><div class="kpi-sub">${prdPct(p)}</div></div>`).join('')}
   </div>
-
-  <!-- KPIs principales -->
-  <div class="kpi-grid kpi-grid-6" style="margin-bottom:20px;">
-    ${PRODUCTOS.map(p => `
-    <div class="kpi-card ${p.includes('PORTABILIDAD') ? 'red' : p.includes('MIGRA') ? 'blue' : 'green'}">
-      <div class="kpi-label">${p}</div>
-      <div class="kpi-value">${byProducto[p] || 0}</div>
-      <div class="kpi-sub">${totalVentas ? ((byProducto[p]||0)/totalVentas*100).toFixed(1)+'%' : '—'}</div>
-    </div>`).join('')}
+  <div class="kpi-grid g4">
+    <div class="kpi-card red"><div class="kpi-label">TOTAL VENTAS</div><div class="kpi-value">${total}</div><div class="kpi-sub">Portabilidad + Migración + L.Nueva</div></div>
+    <div class="kpi-card blue"><div class="kpi-label">CONTRATO DIGITAL</div><div class="kpi-value">${byContrato('CONTRATO DIGITAL',byCont)}</div><div class="kpi-sub">${total?(byContrato('CONTRATO DIGITAL',byCont)/total*100).toFixed(1)+'%':'—'}</div></div>
+    <div class="kpi-card orange"><div class="kpi-label">CONTRATO GRABADO</div><div class="kpi-value">${byContrato('CONTRATO GRABADO',byCont)}</div><div class="kpi-sub">${total?(byContrato('CONTRATO GRABADO',byCont)/total*100).toFixed(1)+'%':'—'}</div></div>
+    <div class="kpi-card gray"><div class="kpi-label">ASESORES CON VENTA</div><div class="kpi-value">${new Set(ds.map(r=>r.cedula)).size}</div><div class="kpi-sub">Únicos activos hoy</div></div>
   </div>
-
-  <!-- Total + Contratos -->
-  <div class="kpi-grid kpi-grid-4" style="margin-bottom:24px;">
-    <div class="kpi-card red">
-      <div class="kpi-label">TOTAL VENTAS</div>
-      <div class="kpi-value">${totalVentas}</div>
-      <div class="kpi-sub">Portabilidad + Migración + L.Nueva</div>
-    </div>
-    <div class="kpi-card blue">
-      <div class="kpi-label">CONTRATO DIGITAL</div>
-      <div class="kpi-value">${byContrato['CONTRATO DIGITAL'] || 0}</div>
-      <div class="kpi-sub">${totalVentas ? (((byContrato['CONTRATO DIGITAL']||0)/totalVentas)*100).toFixed(1)+'%' : '—'}</div>
-    </div>
-    <div class="kpi-card orange">
-      <div class="kpi-label">CONTRATO GRABADO</div>
-      <div class="kpi-value">${byContrato['CONTRATO GRABADO'] || 0}</div>
-      <div class="kpi-sub">${totalVentas ? (((byContrato['CONTRATO GRABADO']||0)/totalVentas)*100).toFixed(1)+'%' : '—'}</div>
-    </div>
-    <div class="kpi-card gray">
-      <div class="kpi-label">ASESORES CON VENTA</div>
-      <div class="kpi-value">${new Set(ds.map(r => r.cedula)).size}</div>
-      <div class="kpi-sub">Únicos activos hoy</div>
-    </div>
-  </div>
-
-  <!-- Estados -->
   <div class="section-title">ESTADOS DE VENTA</div>
   <div class="estado-row">
-    <div class="estado-card digitado">
-      <div class="estado-icon">📋</div>
-      <div>
-        <div class="estado-label">DIGITADO</div>
-        <div class="estado-num">${byEstado['DIGITADO'] || 0}</div>
-        <div class="estado-pct">${totalVentas ? (((byEstado['DIGITADO']||0)/totalVentas)*100).toFixed(1)+'%' : '—'} del total</div>
-      </div>
-    </div>
-    <div class="estado-card rechazo">
-      <div class="estado-icon">⚠️</div>
-      <div>
-        <div class="estado-label">RECHAZOS</div>
-        <div class="estado-num">${byEstado['RECHAZO'] || 0}</div>
-        <div class="estado-pct">${totalVentas ? (((byEstado['RECHAZO']||0)/totalVentas)*100).toFixed(1)+'%' : '—'} del total</div>
-      </div>
-    </div>
-    <div class="estado-card nueva">
-      <div class="estado-icon">🟢</div>
-      <div>
-        <div class="estado-label">NUEVA</div>
-        <div class="estado-num">${byEstado['NUEVA'] || 0}</div>
-        <div class="estado-pct">${totalVentas ? (((byEstado['NUEVA']||0)/totalVentas)*100).toFixed(1)+'%' : '—'} del total</div>
-      </div>
-    </div>
+    <div class="estado-card d"><div class="estado-icon">📋</div><div><div class="estado-label">DIGITADO</div><div class="estado-num">${byEst['D']||0}</div><div class="estado-pct">${estPct('D')} del total</div></div></div>
+    <div class="estado-card r"><div class="estado-icon">⚠️</div><div><div class="estado-label">RECHAZOS</div><div class="estado-num">${byEst['R']||0}</div><div class="estado-pct">${estPct('R')} del total</div></div></div>
+    <div class="estado-card n"><div class="estado-icon">🟢</div><div><div class="estado-label">NUEVA</div><div class="estado-num">${byEst['N']||0}</div><div class="estado-pct">${estPct('N')} del total</div></div></div>
   </div>
-
-  <!-- Por Jefe de Operación -->
   <div class="section-title">POR JEFE DE OPERACIÓN</div>
   <div class="jefe-grid">
-    ${jefes.map(j => {
-      const jefeRows = ds.filter(r => r.jefe === j);
-      const jByProd = countBy(jefeRows, 'producto');
-      const jByEst = countBy(jefeRows, 'estadoGroup');
-      return `
-      <div class="jefe-card">
-        <div class="jefe-header">
-          <div class="jefe-name">${j}</div>
-          <div class="jefe-total">${jefeRows.length}</div>
-        </div>
-        <div class="jefe-body">
-          ${PRODUCTOS.map(p => `
-          <div class="jefe-row">
-            <span class="jefe-row-label">${p}</span>
-            <span class="jefe-row-val">${jByProd[p] || 0}</span>
-          </div>`).join('')}
-          <div style="height:8px;"></div>
-          <div class="jefe-row"><span class="jefe-row-label" style="color:var(--blue);">Digitado</span><span class="jefe-row-val" style="color:var(--blue);">${jByEst['DIGITADO']||0}</span></div>
-          <div class="jefe-row"><span class="jefe-row-label" style="color:#DC2626;">Rechazos</span><span class="jefe-row-val" style="color:#DC2626;">${jByEst['RECHAZO']||0}</span></div>
-          <div class="jefe-row"><span class="jefe-row-label" style="color:var(--green);">Nuevas</span><span class="jefe-row-val" style="color:var(--green);">${jByEst['NUEVA']||0}</span></div>
-        </div>
-      </div>`;
+    ${jefes.map(j=>{
+      const jr=ds.filter(r=>r.jefe===j),jp=countBy(jr,'producto'),je=countBy(jr,'estadoGroup');
+      return `<div class="jefe-card"><div class="jefe-header"><div class="jefe-name">${j}</div><div class="jefe-total">${jr.length}</div></div><div class="jefe-body">
+        ${PRODUCTOS.map(p=>`<div class="jefe-row"><span class="jefe-row-label">${p}</span><span class="jefe-row-val">${jp[p]||0}</span></div>`).join('')}
+        <div style="height:8px"></div>
+        <div class="jefe-row"><span class="jefe-row-label" style="color:var(--blue)">Digitado</span><span class="jefe-row-val" style="color:var(--blue)">${je['D']||0}</span></div>
+        <div class="jefe-row"><span class="jefe-row-label" style="color:#DC2626">Rechazos</span><span class="jefe-row-val" style="color:#DC2626">${je['R']||0}</span></div>
+        <div class="jefe-row"><span class="jefe-row-label" style="color:var(--green)">Nuevas</span><span class="jefe-row-val" style="color:var(--green)">${je['N']||0}</span></div>
+      </div></div>`;
     }).join('')}
   </div>
-
-  <!-- Charts -->
   <div class="grid-2">
-    <div class="chart-card">
-      <div class="chart-header">
-        <div>
-          <div class="chart-title">Distribución por Producto</div>
-          <div class="chart-subtitle">Total de ventas del día</div>
-        </div>
-      </div>
-      <div class="chart-wrap" style="height:240px;">
-        <canvas id="chartProducto"></canvas>
-      </div>
-    </div>
-    <div class="chart-card">
-      <div class="chart-header">
-        <div>
-          <div class="chart-title">Ventas por Jefe de Operación</div>
-          <div class="chart-subtitle">Comparativo entre jefes</div>
-        </div>
-      </div>
-      <div class="chart-wrap" style="height:240px;">
-        <canvas id="chartJefe"></canvas>
-      </div>
-    </div>
+    <div class="chart-card"><div class="chart-title">Distribución por Producto</div><div style="height:240px"><canvas id="chProd"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">Ventas por Jefe de Operación</div><div style="height:240px"><canvas id="chJefe"></canvas></div></div>
   </div>
+  <div class="table-card"><div class="table-card-header"><div class="table-card-title">Resumen Producto × Estado</div></div>
+  <table><thead><tr><th>Producto</th><th class="tc">Digitado</th><th class="tc">Rechazo</th><th class="tc">Nueva</th><th class="tc">Total</th><th>Participación</th></tr></thead><tbody>
+  ${PRODUCTOS.map(p=>{const r=ds.filter(x=>x.producto===p),e=countBy(r,'estadoGroup'),t=r.length,pct=total?(t/total*100).toFixed(1):0;
+    return `<tr><td><strong>${p}</strong></td><td class="tc"><span class="pill pill-d">${e['D']||0}</span></td><td class="tc"><span class="pill pill-r">${e['R']||0}</span></td><td class="tc"><span class="pill pill-n">${e['N']||0}</span></td><td class="tc tb">${t}</td><td><div class="pbar-wrap"><div class="pbar-bg"><div class="pbar-fill" style="width:${pct}%"></div></div><span class="pbar-pct">${pct}%</span></div></td></tr>`;
+  }).join('')}
+  </tbody></table></div>`;
 
-  <!-- Tabla resumen por producto x estado -->
-  <div class="table-card">
-    <div class="table-card-header">
-      <div class="table-card-title">Resumen Producto × Estado</div>
-    </div>
-    <table>
-      <thead>
-        <tr>
-          <th>Producto</th>
-          <th class="td-center">Digitado</th>
-          <th class="td-center">Rechazo</th>
-          <th class="td-center">Nueva</th>
-          <th class="td-center">Total</th>
-          <th>Participación</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${PRODUCTOS.map(p => {
-          const rows = ds.filter(r => r.producto === p);
-          const est = countBy(rows, 'estadoGroup');
-          const tot = rows.length;
-          const pct = totalVentas ? (tot/totalVentas*100).toFixed(1) : 0;
-          return `<tr>
-            <td><strong>${p}</strong></td>
-            <td class="td-center"><span class="pill pill-digitado">${est['DIGITADO']||0}</span></td>
-            <td class="td-center"><span class="pill pill-rechazo">${est['RECHAZO']||0}</span></td>
-            <td class="td-center"><span class="pill pill-nueva">${est['NUEVA']||0}</span></td>
-            <td class="td-center td-bold">${tot}</td>
-            <td>
-              <div class="progress-wrap">
-                <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
-                <span class="progress-pct">${pct}%</span>
-              </div>
-            </td>
-          </tr>`;
-        }).join('')}
-      </tbody>
-    </table>
-  </div>
-  `;
+  destroyChart('chProd');
+  charts['chProd']=new Chart(document.getElementById('chProd'),{type:'doughnut',data:{labels:PRODUCTOS,datasets:[{data:PRODUCTOS.map(p=>byProd[p]||0),backgroundColor:['#DA0027','#FF6B8A','#2563EB','#60A5FA','#16A34A','#4ADE80'],borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:10}}}}});
 
-  document.getElementById('general-content').innerHTML = html;
-
-  // Chart: Productos
-  destroyChart('chartProducto');
-  const ctxP = document.getElementById('chartProducto').getContext('2d');
-  charts['chartProducto'] = new Chart(ctxP, {
-    type: 'doughnut',
-    data: {
-      labels: PRODUCTOS,
-      datasets: [{
-        data: PRODUCTOS.map(p => byProducto[p] || 0),
-        backgroundColor: ['#DA0027','#FF6B8A','#2563EB','#60A5FA','#16A34A','#4ADE80'],
-        borderWidth: 2, borderColor: '#fff'
-      }]
-    },
-    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{ font:{size:11}, padding:10 } } } }
-  });
-
-  // Chart: Jefes
-  destroyChart('chartJefe');
-  const ctxJ = document.getElementById('chartJefe').getContext('2d');
-  charts['chartJefe'] = new Chart(ctxJ, {
-    type: 'bar',
-    data: {
-      labels: jefes,
-      datasets: [
-        { label:'Portabilidad', data: jefes.map(j => (jefeProds[j]||{})['PORTABILIDAD']||0), backgroundColor:'#DA0027' },
-        { label:'Port. Power', data: jefes.map(j => (jefeProds[j]||{})['PORTABILIDAD POWER']||0), backgroundColor:'#FF6B8A' },
-        { label:'Migración', data: jefes.map(j => (jefeProds[j]||{})['MIGRACION']||0), backgroundColor:'#2563EB' },
-        { label:'Mig. Power', data: jefes.map(j => (jefeProds[j]||{})['MIGRACION POWER']||0), backgroundColor:'#60A5FA' },
-        { label:'L. Nueva', data: jefes.map(j => (jefeProds[j]||{})['LINEA NUEVA']||0), backgroundColor:'#16A34A' },
-        { label:'L. Nueva Power', data: jefes.map(j => (jefeProds[j]||{})['LINEA NUEVA POWER']||0), backgroundColor:'#4ADE80' },
-      ]
-    },
-    options: {
-      responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{ position:'bottom', labels:{ font:{size:10}, padding:8 } } },
-      scales:{ x:{ stacked:true }, y:{ stacked:true, beginAtZero:true } }
-    }
-  });
+  destroyChart('chJefe');
+  charts['chJefe']=new Chart(document.getElementById('chJefe'),{type:'bar',data:{labels:jefes,datasets:PRODUCTOS.map((p,i)=>({label:p,data:jefes.map(j=>(jefeProds[j]||{})[p]||0),backgroundColor:['#DA0027','#FF6B8A','#2563EB','#60A5FA','#16A34A','#4ADE80'][i]}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10},padding:8}}},scales:{x:{stacked:true},y:{stacked:true,beginAtZero:true}}}});
 }
 
-// ─────────────────────────────────
-// RENDER: COORDINADOR
-// ─────────────────────────────────
-let selectedCoord = null;
+function byContrato(k,m){return m[k]||0;}
 
-function renderCoordinador(ds) {
-  const coords = [...new Set(ds.map(r => r.coordinador))].filter(Boolean).sort();
-  if (!selectedCoord && coords.length) selectedCoord = coords[0];
+// ── COORDINADOR ──
+let selCoord=null;
+function renderCoordinador(){
+  const ds=dataset;
+  const coords=[...new Set(ds.map(r=>r.coordinador))].filter(Boolean).sort();
+  if(!selCoord&&coords.length) selCoord=coords[0];
 
-  function renderCoordDetail(coord) {
-    const rows = ds.filter(r => r.coordinador === coord);
-    const byProd = countBy(rows, 'producto');
-    const byEst = countBy(rows, 'estadoGroup');
-    const byCont = countBy(rows, 'contrato');
-    const asesores = [...new Set(rows.map(r => r.cedula))];
-
-    // Ventas por hora
-    const byHora = {};
-    rows.forEach(r => {
-      const fecha = r.estadoGroup === 'DIGITADO' ? r.fechaDigit : r.fechaVenta;
-      if (!fecha) return;
-      const match = fecha.match(/(\d{1,2}):\d{2}/);
-      if (match) {
-        const h = parseInt(match[1]);
-        byHora[h] = (byHora[h] || 0) + 1;
-      }
-    });
-    const horas = Object.keys(byHora).map(Number).sort((a,b)=>a-b);
-
+  function detail(coord){
+    const rows=ds.filter(r=>r.coordinador===coord);
+    const byProd=countBy(rows,'producto'),byEst=countBy(rows,'estadoGroup');
+    const asesores=[...new Set(rows.map(r=>r.cedula))];
+    const byHora={};
+    rows.forEach(r=>{const f=r.estadoGroup==='D'?r.fechaDigit:r.fechaVenta;if(!f)return;const m=f.match(/(\d{1,2}):\d{2}/);if(m){const h=parseInt(m[1]);byHora[h]=(byHora[h]||0)+1;}});
+    const horas=Array.from({length:12},(_,i)=>i+7);
     return `
-    <div class="kpi-grid kpi-grid-4" style="margin-bottom:20px;">
-      <div class="kpi-card red">
-        <div class="kpi-label">TOTAL VENTAS</div>
-        <div class="kpi-value">${rows.length}</div>
-      </div>
-      <div class="kpi-card blue">
-        <div class="kpi-label">ASESORES CON VENTA</div>
-        <div class="kpi-value">${asesores.length}</div>
-      </div>
-      <div class="kpi-card green">
-        <div class="kpi-label">DIGITADO</div>
-        <div class="kpi-value">${byEst['DIGITADO']||0}</div>
-      </div>
-      <div class="kpi-card orange">
-        <div class="kpi-label">RECHAZOS</div>
-        <div class="kpi-value">${byEst['RECHAZO']||0}</div>
-      </div>
+    <div class="kpi-grid g4" style="margin-bottom:20px">
+      <div class="kpi-card red"><div class="kpi-label">TOTAL VENTAS</div><div class="kpi-value">${rows.length}</div></div>
+      <div class="kpi-card blue"><div class="kpi-label">ASESORES CON VENTA</div><div class="kpi-value">${asesores.length}</div></div>
+      <div class="kpi-card green"><div class="kpi-label">DIGITADO</div><div class="kpi-value">${byEst['D']||0}</div></div>
+      <div class="kpi-card orange"><div class="kpi-label">RECHAZOS</div><div class="kpi-value">${byEst['R']||0}</div></div>
     </div>
-
-    <div class="grid-2" style="margin-bottom:24px;">
-      <div class="chart-card">
-        <div class="chart-header"><div class="chart-title">Ventas por Hora</div></div>
-        <div class="chart-wrap hora-chart-wrap"><canvas id="chartHora"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-header"><div class="chart-title">Distribución por Producto</div></div>
-        <div class="chart-wrap hora-chart-wrap"><canvas id="chartCoordProd"></canvas></div>
-      </div>
+    <div class="grid-2" style="margin-bottom:24px">
+      <div class="chart-card"><div class="chart-title">Ventas por Hora</div><div class="h200"><canvas id="chHora"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">Distribución por Producto</div><div class="h200"><canvas id="chCProd"></canvas></div></div>
     </div>
-
-    <div class="table-card">
-      <div class="table-card-header">
-        <div class="table-card-title">Detalle de Ventas — ${coord}</div>
-        <div style="font-size:12px;color:var(--gray-500);">${rows.length} ventas · ${asesores.length} asesores</div>
-      </div>
-      <table>
-        <thead>
-          <tr>
-            <th>Asesor</th>
-            <th>Cédula</th>
-            <th>Producto</th>
-            <th class="td-center">Estado</th>
-            <th class="td-center">Contrato</th>
-            <th>Fecha Venta</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rows.slice(0,100).map(r => `<tr>
-            <td><div class="asesor-name">${r.nombre || '—'}</div></td>
-            <td><span class="asesor-cedula">${r.cedula}</span></td>
-            <td>${r.producto}</td>
-            <td class="td-center">
-              <span class="pill ${r.estadoGroup==='DIGITADO'?'pill-digitado':r.estadoGroup==='RECHAZO'?'pill-rechazo':'pill-nueva'}">${r.estadoGroup}</span>
-            </td>
-            <td class="td-center">
-              <span class="contrato-tag ${r.contrato.includes('DIGITAL')?'contrato-dig':'contrato-grab'}">${r.contrato.includes('DIGITAL')?'DIGITAL':'GRABADO'}</span>
-            </td>
-            <td style="font-size:12px;color:var(--gray-600);">${r.fechaVenta || '—'}</td>
-          </tr>`).join('')}
-        </tbody>
-      </table>
-    </div>
-    `;
+    <div class="table-card"><div class="table-card-header"><div class="table-card-title">Detalle — ${coord}</div><div style="font-size:12px;color:var(--gray-500)">${rows.length} ventas · ${asesores.length} asesores</div></div>
+    <table><thead><tr><th>Asesor</th><th>Cédula</th><th>Producto</th><th class="tc">Estado</th><th class="tc">Contrato</th><th>Fecha Venta</th></tr></thead><tbody>
+    ${rows.slice(0,100).map(r=>`<tr><td><div class="asesor-name">${r.nombre||'—'}</div></td><td><span class="asesor-cedula">${r.cedula}</span></td><td>${r.producto}</td><td class="tc"><span class="pill ${r.estadoGroup==='D'?'pill-d':r.estadoGroup==='R'?'pill-r':'pill-n'}">${r.estadoGroup==='D'?'DIGITADO':r.estadoGroup==='R'?'RECHAZO':'NUEVA'}</span></td><td class="tc"><span class="ctag ${r.contrato.includes('DIGITAL')?'ctag-d':'ctag-g'}">${r.contrato.includes('DIGITAL')?'DIGITAL':'GRABADO'}</span></td><td style="font-size:12px;color:var(--gray-600)">${r.fechaVenta||'—'}</td></tr>`).join('')}
+    </tbody></table></div>`;
   }
 
-  const html = `
+  document.getElementById('coord-content').innerHTML=`
   <div class="section-title">DASHBOARD POR COORDINADOR</div>
-  <div class="coord-selector">
-    ${coords.map(c => `<button class="coord-btn ${c===selectedCoord?'active':''}" onclick="selectCoord('${c}')">${c}</button>`).join('')}
-  </div>
-  <div id="coord-detail">${selectedCoord ? renderCoordDetail(selectedCoord) : '<div class="empty-state">Selecciona un coordinador</div>'}</div>
-  `;
+  <div class="coord-selector">${coords.map(c=>`<button class="coord-btn ${c===selCoord?'active':''}" onclick="selCoord='${c}';renderCoordinador()">${c}</button>`).join('')}</div>
+  <div id="coord-detail">${selCoord?detail(selCoord):'<div class="empty-state">Sin datos</div>'}</div>`;
 
-  document.getElementById('coord-content').innerHTML = html;
-
-  if (selectedCoord) {
-    const rowsC = ds.filter(r => r.coordinador === selectedCoord);
-    const byHora = {};
-    rowsC.forEach(r => {
-      const fecha = r.estadoGroup === 'DIGITADO' ? r.fechaDigit : r.fechaVenta;
-      if (!fecha) return;
-      const match = fecha.match(/(\d{1,2}):\d{2}/);
-      if (match) { const h = parseInt(match[1]); byHora[h] = (byHora[h]||0)+1; }
-    });
-    const horas = Array.from({length:12}, (_,i)=>i+7);
-
-    destroyChart('chartHora');
-    const ctxH = document.getElementById('chartHora');
-    if (ctxH) {
-      charts['chartHora'] = new Chart(ctxH.getContext('2d'), {
-        type: 'bar',
-        data: {
-          labels: horas.map(h => h+':00'),
-          datasets: [{ label:'Ventas', data: horas.map(h=>byHora[h]||0), backgroundColor:'#DA0027', borderRadius:4 }]
-        },
-        options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ y:{beginAtZero:true} } }
-      });
-    }
-
-    const byProd = countBy(rowsC, 'producto');
-    destroyChart('chartCoordProd');
-    const ctxCP = document.getElementById('chartCoordProd');
-    if (ctxCP) {
-      charts['chartCoordProd'] = new Chart(ctxCP.getContext('2d'), {
-        type: 'doughnut',
-        data: {
-          labels: PRODUCTOS,
-          datasets: [{ data: PRODUCTOS.map(p=>byProd[p]||0), backgroundColor:['#DA0027','#FF6B8A','#2563EB','#60A5FA','#16A34A','#4ADE80'], borderWidth:2, borderColor:'#fff' }]
-        },
-        options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{font:{size:10}, padding:8} } } }
-      });
-    }
+  if(selCoord){
+    const rowsC=dataset.filter(r=>r.coordinador===selCoord);
+    const bH={};
+    rowsC.forEach(r=>{const f=r.estadoGroup==='D'?r.fechaDigit:r.fechaVenta;if(!f)return;const m=f.match(/(\d{1,2}):\d{2}/);if(m){const h=parseInt(m[1]);bH[h]=(bH[h]||0)+1;}});
+    const horas=Array.from({length:12},(_,i)=>i+7);
+    destroyChart('chHora');
+    const ctxH=document.getElementById('chHora');
+    if(ctxH) charts['chHora']=new Chart(ctxH,{type:'bar',data:{labels:horas.map(h=>h+':00'),datasets:[{label:'Ventas',data:horas.map(h=>bH[h]||0),backgroundColor:'#DA0027',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});
+    const bP=countBy(rowsC,'producto');
+    destroyChart('chCProd');
+    const ctxP=document.getElementById('chCProd');
+    if(ctxP) charts['chCProd']=new Chart(ctxP,{type:'doughnut',data:{labels:PRODUCTOS,datasets:[{data:PRODUCTOS.map(p=>bP[p]||0),backgroundColor:['#DA0027','#FF6B8A','#2563EB','#60A5FA','#16A34A','#4ADE80'],borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10},padding:8}}}}});
   }
 }
 
-window.selectCoord = function(coord) {
-  selectedCoord = coord;
-  const ds = buildDataset();
-  renderCoordinador(ds);
-};
+// ── ASESOR ──
+function renderAsesor(){
+  const ds=dataset;
+  const jefes=['Todos',...new Set(ds.map(r=>r.jefe)).values()].filter(Boolean);
+  const coords=['Todos',...new Set(ds.map(r=>r.coordinador)).values()].filter(Boolean);
 
-// ─────────────────────────────────
-// RENDER: ASESOR
-// ─────────────────────────────────
-function renderAsesor(ds) {
-  const jefes = ['Todos', ...new Set(ds.map(r => r.jefe)).values()].filter(Boolean);
-  const coords = ['Todos', ...new Set(ds.map(r => r.coordinador)).values()].filter(Boolean);
-
-  function filteredDs(jefeFilter, coordFilter) {
-    return ds.filter(r =>
-      (jefeFilter === 'Todos' || r.jefe === jefeFilter) &&
-      (coordFilter === 'Todos' || r.coordinador === coordFilter)
-    );
-  }
-
-  function renderAsesorTable(rows) {
-    // Group by asesor
-    const asesorMap = {};
-    rows.forEach(r => {
-      if (!asesorMap[r.cedula]) {
-        asesorMap[r.cedula] = { cedula:r.cedula, nombre:r.nombre, coordinador:r.coordinador, jefe:r.jefe, ventas:0, digitado:0, rechazo:0, nueva:0, prods:{} };
-      }
-      const a = asesorMap[r.cedula];
-      a.ventas++;
-      if (r.estadoGroup==='DIGITADO') a.digitado++;
-      else if (r.estadoGroup==='RECHAZO') a.rechazo++;
-      else if (r.estadoGroup==='NUEVA') a.nueva++;
-      a.prods[r.producto] = (a.prods[r.producto]||0)+1;
-    });
-
-    const sorted = Object.values(asesorMap).sort((a,b)=>b.ventas-a.ventas);
-
-    if (!sorted.length) return '<div class="empty-state">Sin datos para los filtros seleccionados</div>';
-
-    return `
-    <table>
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Asesor</th>
-          <th>Coordinador</th>
-          <th>Jefe Op.</th>
-          <th class="td-center">Ventas</th>
-          <th class="td-center">Digitado</th>
-          <th class="td-center">Rechazo</th>
-          <th class="td-center">Nueva</th>
-          <th>Productos</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${sorted.map((a,i) => `<tr>
-          <td><span class="rank-num ${i<3?'top':''}">${i+1}</span></td>
-          <td>
-            <div class="asesor-name">${a.nombre||'—'}</div>
-            <div class="asesor-cedula">${a.cedula}</div>
-          </td>
-          <td style="font-size:12px;">${a.coordinador}</td>
-          <td style="font-size:12px;">${a.jefe}</td>
-          <td class="td-center td-bold" style="color:var(--red);">${a.ventas}</td>
-          <td class="td-center"><span class="pill pill-digitado">${a.digitado}</span></td>
-          <td class="td-center"><span class="pill pill-rechazo">${a.rechazo}</span></td>
-          <td class="td-center"><span class="pill pill-nueva">${a.nueva}</span></td>
-          <td style="font-size:11px;">
-            ${PRODUCTOS.filter(p=>a.prods[p]).map(p=>`<span style="display:inline-block;background:var(--gray-100);border-radius:4px;padding:1px 6px;margin:1px;color:var(--gray-700);">${p.replace(' POWER','⚡')}: ${a.prods[p]}</span>`).join('')}
-          </td>
-        </tr>`).join('')}
-      </tbody>
-    </table>`;
-  }
-
-  // Ventas por hora (global, filtrado)
-  function getHoraData(rows) {
-    const byHora = {};
-    rows.forEach(r => {
-      const fecha = r.estadoGroup === 'DIGITADO' ? r.fechaDigit : r.fechaVenta;
-      if (!fecha) return;
-      const match = fecha.match(/(\d{1,2}):\d{2}/);
-      if (match) { const h = parseInt(match[1]); byHora[h] = (byHora[h]||0)+1; }
-    });
-    return byHora;
-  }
-
-  // % asesores con venta por coordinador
-  function getPctCoord(rows) {
-    const grouped = {};
-    rows.forEach(r => {
-      if (!grouped[r.coordinador]) grouped[r.coordinador] = new Set();
-      grouped[r.coordinador].add(r.cedula);
-    });
-    // planta activa la tomamos del dataset (todos los asesores del coord, independiente de filtro de fecha)
-    return Object.entries(grouped).map(([coord, set]) => ({
-      coord, conVenta: set.size
-    })).sort((a,b) => b.conVenta - a.conVenta);
-  }
-
-  const html = `
+  document.getElementById('asesor-content').innerHTML=`
   <div class="section-title">DASHBOARD POR ASESOR</div>
   <div class="filters-row">
     <span class="filter-label">Filtrar por:</span>
-    <select class="filter-select" id="filtroJefe" onchange="applyAsesorFilters()">
-      ${jefes.map(j => `<option value="${j}">${j}</option>`).join('')}
-    </select>
-    <select class="filter-select" id="filtroCoord" onchange="applyAsesorFilters()">
-      ${coords.map(c => `<option value="${c}">${c}</option>`).join('')}
-    </select>
+    <select class="filter-select" id="fJefe" onchange="updateAsesor()"><br>${jefes.map(j=>`<option>${j}</option>`).join('')}</select>
+    <select class="filter-select" id="fCoord" onchange="updateAsesor()"><br>${coords.map(c=>`<option>${c}</option>`).join('')}</select>
   </div>
-
-  <div class="kpi-grid kpi-grid-3" style="margin-bottom:20px;" id="asesorKpis">
-    <!-- dynamic -->
+  <div class="kpi-grid g3" id="aKpis"></div>
+  <div class="grid-2" style="margin-bottom:24px">
+    <div class="chart-card"><div class="chart-title">Ventas por Hora del Día</div><div class="h200"><canvas id="chAHora"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">Asesores con Venta por Coordinador</div><div class="h200"><canvas id="chAPct"></canvas></div></div>
   </div>
+  <div class="table-card"><div class="table-card-header"><div class="table-card-title">Ranking de Asesores</div><div style="font-size:12px;color:var(--gray-500)" id="aTableSub"></div></div><div id="aTableBody"></div></div>`;
 
-  <div class="grid-2" style="margin-bottom:24px;">
-    <div class="chart-card">
-      <div class="chart-header"><div class="chart-title">Ventas por Hora del Día</div></div>
-      <div class="chart-wrap hora-chart-wrap"><canvas id="chartAsesorHora"></canvas></div>
-    </div>
-    <div class="chart-card">
-      <div class="chart-header"><div class="chart-title">% Asesores con Venta por Coordinador</div></div>
-      <div class="chart-wrap hora-chart-wrap"><canvas id="chartPctCoord"></canvas></div>
-    </div>
-  </div>
-
-  <div class="table-card" id="asesorTableCard">
-    <div class="table-card-header">
-      <div class="table-card-title">Ranking de Asesores</div>
-      <div style="font-size:12px;color:var(--gray-500);" id="asesorTableSub"></div>
-    </div>
-    <div id="asesorTableBody"></div>
-  </div>
-  `;
-
-  document.getElementById('asesor-content').innerHTML = html;
-
-  function updateAsesorView() {
-    const jefeF = document.getElementById('filtroJefe').value;
-    const coordF = document.getElementById('filtroCoord').value;
-    const rows = filteredDs(jefeF, coordF);
-
-    // KPIs
-    const totalV = rows.length;
-    const asesoresV = new Set(rows.map(r=>r.cedula)).size;
-    const byEst = countBy(rows, 'estadoGroup');
-    document.getElementById('asesorKpis').innerHTML = `
-      <div class="kpi-card red"><div class="kpi-label">Total Ventas</div><div class="kpi-value">${totalV}</div></div>
-      <div class="kpi-card blue"><div class="kpi-label">Asesores con Venta</div><div class="kpi-value">${asesoresV}</div></div>
-      <div class="kpi-card green"><div class="kpi-label">Digitado</div><div class="kpi-value">${byEst['DIGITADO']||0}</div><div class="kpi-sub">${totalV?(((byEst['DIGITADO']||0)/totalV)*100).toFixed(1)+'%':'—'}</div></div>
-    `;
-
-    // Table
-    document.getElementById('asesorTableBody').innerHTML = renderAsesorTable(rows);
-    document.getElementById('asesorTableSub').textContent = `${asesoresV} asesores · ${totalV} ventas · ordenado mayor a menor`;
-
-    // Chart hora
-    const byHora = getHoraData(rows);
-    const horas = Array.from({length:14}, (_,i)=>i+6);
-    destroyChart('chartAsesorHora');
-    const ctxH = document.getElementById('chartAsesorHora');
-    if (ctxH) {
-      charts['chartAsesorHora'] = new Chart(ctxH.getContext('2d'), {
-        type: 'line',
-        data: {
-          labels: horas.map(h=>h+':00'),
-          datasets: [{ label:'Ventas', data: horas.map(h=>byHora[h]||0), borderColor:'#DA0027', backgroundColor:'rgba(218,0,39,0.1)', fill:true, tension:0.4, pointBackgroundColor:'#DA0027' }]
-        },
-        options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ y:{beginAtZero:true} } }
-      });
-    }
-
-    // Chart % por coord
-    const pctData = getPctCoord(rows);
-    destroyChart('chartPctCoord');
-    const ctxPC = document.getElementById('chartPctCoord');
-    if (ctxPC) {
-      charts['chartPctCoord'] = new Chart(ctxPC.getContext('2d'), {
-        type: 'bar',
-        data: {
-          labels: pctData.map(p=>p.coord),
-          datasets: [{ label:'Con venta', data:pctData.map(p=>p.conVenta), backgroundColor:'#DA0027', borderRadius:4 }]
-        },
-        options: { responsive:true, maintainAspectRatio:false, indexAxis:'y', plugins:{legend:{display:false}}, scales:{ x:{beginAtZero:true} } }
-      });
-    }
-  }
-
-  window.applyAsesorFilters = updateAsesorView;
-  updateAsesorView();
+  updateAsesor();
 }
 
-// ═══════════════════════════════════════════════════
-// ERROR / CONFIG PROMPTS
-// ═══════════════════════════════════════════════════
-function showConfigPrompt() {
-  const html = `
-  <div class="error-box" style="background:#FFFBEB;border-color:#FDE68A;color:#92400E;">
-    <strong>⚙ Configuración requerida</strong>
-    Para ver los datos debes conectar tu Google Sheets. Haz clic en el botón <strong>⚙ Configurar</strong> en la parte superior y pega la URL CSV de tu hoja publicada.
-    <br><br>
-    <strong>Pasos:</strong><br>
-    1. Abre tu Google Sheets<br>
-    2. Ve a <em>Archivo → Publicar en la web</em><br>
-    3. Selecciona la hoja de ventas y el formato <strong>CSV</strong><br>
-    4. Copia la URL generada y pégala en el panel de configuración
-  </div>`;
-  ['general-content','coord-content','asesor-content'].forEach(id => {
-    document.getElementById(id).innerHTML = html;
+function updateAsesor(){
+  const jF=document.getElementById('fJefe')?.value||'Todos';
+  const cF=document.getElementById('fCoord')?.value||'Todos';
+  const rows=dataset.filter(r=>(jF==='Todos'||r.jefe===jF)&&(cF==='Todos'||r.coordinador===cF));
+
+  const total=rows.length, asesores=new Set(rows.map(r=>r.cedula)).size;
+  const byEst=countBy(rows,'estadoGroup');
+  document.getElementById('aKpis').innerHTML=`
+    <div class="kpi-card red"><div class="kpi-label">Total Ventas</div><div class="kpi-value">${total}</div></div>
+    <div class="kpi-card blue"><div class="kpi-label">Asesores con Venta</div><div class="kpi-value">${asesores}</div></div>
+    <div class="kpi-card green"><div class="kpi-label">Digitado</div><div class="kpi-value">${byEst['D']||0}</div><div class="kpi-sub">${total?((byEst['D']||0)/total*100).toFixed(1)+'%':'—'}</div></div>`;
+
+  // Ranking
+  const am={};
+  rows.forEach(r=>{
+    if(!am[r.cedula]) am[r.cedula]={cedula:r.cedula,nombre:r.nombre,coordinador:r.coordinador,jefe:r.jefe,v:0,d:0,rx:0,n:0,prods:{}};
+    const a=am[r.cedula]; a.v++;
+    if(r.estadoGroup==='D') a.d++;
+    else if(r.estadoGroup==='R') a.rx++;
+    else a.n++;
+    a.prods[r.producto]=(a.prods[r.producto]||0)+1;
   });
-  document.getElementById('configPanel').classList.add('show');
+  const sorted=Object.values(am).sort((a,b)=>b.v-a.v);
+  document.getElementById('aTableSub').textContent=asesores+' asesores · '+total+' ventas';
+  document.getElementById('aTableBody').innerHTML=sorted.length?`
+  <table><thead><tr><th>#</th><th>Asesor</th><th>Coordinador</th><th>Jefe Op.</th><th class="tc">Ventas</th><th class="tc">Dig.</th><th class="tc">Rec.</th><th class="tc">Nueva</th><th>Productos</th></tr></thead><tbody>
+  ${sorted.map((a,i)=>`<tr><td><span class="rank-num ${i<3?'top':''}">${i+1}</span></td><td><div class="asesor-name">${a.nombre||'—'}</div><div class="asesor-cedula">${a.cedula}</div></td><td style="font-size:12px">${a.coordinador}</td><td style="font-size:12px">${a.jefe}</td><td class="tc tb" style="color:var(--red)">${a.v}</td><td class="tc"><span class="pill pill-d">${a.d}</span></td><td class="tc"><span class="pill pill-r">${a.rx}</span></td><td class="tc"><span class="pill pill-n">${a.n}</span></td><td style="font-size:11px">${PRODUCTOS.filter(p=>a.prods[p]).map(p=>`<span style="background:var(--gray-100);border-radius:4px;padding:1px 6px;margin:1px;display:inline-block">${p.replace(' POWER','⚡')}: ${a.prods[p]}</span>`).join('')}</td></tr>`).join('')}
+  </tbody></table>`:'<div class="empty-state">Sin datos</div>';
+
+  // Chart hora
+  const bH={};
+  rows.forEach(r=>{const f=r.estadoGroup==='D'?r.fechaDigit:r.fechaVenta;if(!f)return;const m=f.match(/(\d{1,2}):\d{2}/);if(m){const h=parseInt(m[1]);bH[h]=(bH[h]||0)+1;}});
+  const horas=Array.from({length:14},(_,i)=>i+6);
+  destroyChart('chAHora');
+  const ctxAH=document.getElementById('chAHora');
+  if(ctxAH) charts['chAHora']=new Chart(ctxAH,{type:'line',data:{labels:horas.map(h=>h+':00'),datasets:[{data:horas.map(h=>bH[h]||0),borderColor:'#DA0027',backgroundColor:'rgba(218,0,39,0.1)',fill:true,tension:0.4,pointBackgroundColor:'#DA0027'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});
+
+  // Chart % por coord
+  const gc={};
+  rows.forEach(r=>{if(!gc[r.coordinador])gc[r.coordinador]=new Set();gc[r.coordinador].add(r.cedula);});
+  const pctD=Object.entries(gc).map(([c,s])=>({c,n:s.size})).sort((a,b)=>b.n-a.n);
+  destroyChart('chAPct');
+  const ctxAP=document.getElementById('chAPct');
+  if(ctxAP) charts['chAPct']=new Chart(ctxAP,{type:'bar',data:{labels:pctD.map(x=>x.c),datasets:[{data:pctD.map(x=>x.n),backgroundColor:'#DA0027',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true}}}});
 }
 
-function showError(msg) {
-  const html = `
-  <div class="error-box">
-    <strong>❌ Error al cargar datos</strong>
-    ${msg}<br><br>
-    Verifica que la URL del Google Sheets sea correcta y que la hoja esté publicada públicamente como CSV.
-  </div>`;
-  ['general-content','coord-content','asesor-content'].forEach(id => {
-    document.getElementById(id).innerHTML = html;
-  });
-}
-
-// ═══════════════════════════════════════════════════
-// AUTO REFRESH
-// ═══════════════════════════════════════════════════
-setInterval(() => {
-  if (allLoaded) loadData();
-}, CONFIG.refreshInterval);
-
-// ═══════════════════════════════════════════════════
+// ══════════════════════════════════════
 // INIT
-// ═══════════════════════════════════════════════════
-window.addEventListener('DOMContentLoaded', () => {
-  // Datos de ventas están hardcodeados — cargar directo
-  loadData();
-});
+// ══════════════════════════════════════
+setInterval(()=>loadData(), REFRESH_MS);
+window.addEventListener('DOMContentLoaded', loadData);
 </script>
 </body>
 </html>
