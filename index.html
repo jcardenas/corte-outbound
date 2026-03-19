@@ -747,6 +747,14 @@ const ESTADOS = {
   RECHAZO: ['ALARMA POR PROCESO INCORRECTO','ALERTA FRAUDE PQRS','ANULADO','RECHAZO DIGITACION'],
   NUEVA: ['SEGUIMIENTO DIGITACION','RE-DIGITADACION','NUEVA','EN DIGITACION']
 };
+// Pre-normalized versions for comparison
+const CAMPANAS_N  = CAMPANAS.map(s => s.normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().trim());
+const PRODUCTOS_N = PRODUCTOS.map(s => s.normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().trim());
+const ESTADOS_N = {
+  DIGITADO: ESTADOS.DIGITADO.map(s => s.normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().trim()),
+  RECHAZO:  ESTADOS.RECHAZO.map(s  => s.normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().trim()),
+  NUEVA:    ESTADOS.NUEVA.map(s    => s.normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().trim()),
+};
 const CONTRATOS = ['CONTRATO DIGITAL','CONTRATO GRABADO'];
 
 // Charts registry
@@ -956,38 +964,43 @@ function getField(row, letter) {
   return '';
 }
 
+function normalize(str) {
+  // Remove accents, trim, uppercase
+  return (str || '').toString().trim()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase()
+    .replace(/\s+/g, ' '); // collapse multiple spaces
+}
+
 function processRow(row) {
-  // Use numeric positional keys (set during CSV parse)
-  const get = (i) => (row[i] || '').toString().trim().toUpperCase();
+  const get    = (i) => normalize(row[i]);
   const getRaw = (i) => (row[i] || '').toString().trim();
 
-  const tipoCampana  = get(24); // Y = col 25 = index 24 — TIPO CAMPAÑA
-  const producto     = get(21); // V = col 22 = index 21 — PRODUCTO
-  const estadoServ   = get(20); // U = col 21 = index 20 — ESTADO SERVICIO
-  const tipoContrato = get(25); // Z = col 26 = index 25 — TIPO CONTRATO
-  const fechaVenta   = getRaw(28); // AC = col 29 = index 28 — FECHA VENTA
-  const fechaDigit   = getRaw(29); // AD = col 30 = index 29 — FECHA DIGITACION
-  const cedula       = get(14); // O = col 15 = index 14 — CEDULA VENDEDOR
-  const nombreUser   = getRaw(15); // P = col 16 = index 15 — NOMBRE USUARIO
+  const tipoCampana  = get(24); // Y — TIPO CAMPAÑA
+  const producto     = get(21); // V — PRODUCTO
+  const estadoServ   = get(20); // U — ESTADO SERVICIO
+  const tipoContrato = get(25); // Z — TIPO CONTRATO
+  const fechaVenta   = getRaw(28); // AC — FECHA VENTA
+  const fechaDigit   = getRaw(29); // AD — FECHA DIGITACION
+  const cedula       = get(14); // O — CEDULA VENDEDOR
+  const nombreUser   = getRaw(15); // P — NOMBRE USUARIO
 
   return { tipoCampana, producto, estadoServ, tipoContrato, fechaVenta, fechaDigit, cedula, nombreUser };
 }
 
 function getEstadoGroup(estado) {
-  const e = estado.toString().trim().toUpperCase();
-  if (ESTADOS.DIGITADO.includes(e)) return 'DIGITADO';
-  if (ESTADOS.RECHAZO.includes(e)) return 'RECHAZO';
-  if (ESTADOS.NUEVA.includes(e)) return 'NUEVA';
-  return null; // estado no reconocido — se excluye del conteo
+  const e = (estado||'').toString().trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/\s+/g,' ');
+  if (ESTADOS_N.DIGITADO.includes(e)) return 'DIGITADO';
+  if (ESTADOS_N.RECHAZO.includes(e))  return 'RECHAZO';
+  if (ESTADOS_N.NUEVA.includes(e))    return 'NUEVA';
+  return null;
 }
 
 function filterRelevant(rows) {
   return rows.filter(row => {
     const { tipoCampana, producto } = processRow(row);
-    // STRICT: solo PORTABILIDAD y MIGRACION BK en columna Y (TIPO CAMPAÑA)
-    const campanaOk = tipoCampana === 'PORTABILIDAD' || tipoCampana === 'MIGRACION BK';
-    // STRICT: solo los 6 productos definidos en columna V (PRODUCTO)
-    const productoOk = PRODUCTOS.includes(producto);
+    const campanaOk  = CAMPANAS_N.includes(tipoCampana);
+    const productoOk = PRODUCTOS_N.includes(producto);
     return campanaOk && productoOk;
   });
 }
@@ -1010,7 +1023,8 @@ function buildDataset() {
     };
 
     // Normalize producto — exact match only
-    const prodNorm = PRODUCTOS.includes(p.producto) ? p.producto : null;
+    const prodIdx = PRODUCTOS_N.indexOf(p.producto);
+    const prodNorm = prodIdx >= 0 ? PRODUCTOS[prodIdx] : null;
     if (!prodNorm) return;
 
     result.push({
