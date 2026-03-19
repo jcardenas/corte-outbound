@@ -661,6 +661,9 @@
     <button class="btn-refresh" style="background:var(--gray-700);" onclick="toggleConfig()">
       ⚙ Configurar
     </button>
+    <button class="btn-refresh" style="background:var(--blue);font-size:11px;" onclick="debugData()">
+      🔍 Debug
+    </button>
   </div>
 </header>
 
@@ -981,7 +984,9 @@ function getEstadoGroup(estado) {
 function filterRelevant(rows) {
   return rows.filter(row => {
     const { tipoCampana, producto } = processRow(row);
-    const campanaOk = CAMPANAS.includes(tipoCampana);
+    // STRICT: solo PORTABILIDAD y MIGRACION BK en columna Y (TIPO CAMPAÑA)
+    const campanaOk = tipoCampana === 'PORTABILIDAD' || tipoCampana === 'MIGRACION BK';
+    // STRICT: solo los 6 productos definidos en columna V (PRODUCTO)
     const productoOk = PRODUCTOS.includes(producto);
     return campanaOk && productoOk;
   });
@@ -1029,6 +1034,36 @@ function buildDataset() {
 // ═══════════════════════════════════════════════════
 // RENDER ALL
 // ═══════════════════════════════════════════════════
+function debugData() {
+  if (!rawData.length) return;
+  // Sample first 5 rows — show col Y (24), col V (21), col U (20)
+  const sample = rawData.slice(0,5);
+  let msg = '=== DEBUG primeras 5 filas ===\n';
+  msg += 'Total filas crudas: ' + rawData.length + '\n\n';
+  sample.forEach((row, i) => {
+    msg += `Fila ${i+1}:\n`;
+    msg += `  Col Y(24) TIPO CAMPAÑA: "${row[24]}"\n`;
+    msg += `  Col V(21) PRODUCTO: "${row[21]}"\n`;
+    msg += `  Col U(20) ESTADO: "${row[20]}"\n`;
+    msg += `  Col O(14) CEDULA: "${row[14]}"\n`;
+  });
+  // Count unique campaigns
+  const camps = {};
+  rawData.forEach(r => { const v = (r[24]||'').trim(); camps[v] = (camps[v]||0)+1; });
+  msg += '\n=== Valores únicos columna Y (TIPO CAMPAÑA) ===\n';
+  Object.entries(camps).sort((a,b)=>b[1]-a[1]).slice(0,15).forEach(([k,v]) => {
+    msg += `  "${k}": ${v}\n`;
+  });
+  // Count unique products
+  const prods = {};
+  rawData.forEach(r => { const v = (r[21]||'').trim(); prods[v] = (prods[v]||0)+1; });
+  msg += '\n=== Valores únicos columna V (PRODUCTO) ===\n';
+  Object.entries(prods).sort((a,b)=>b[1]-a[1]).slice(0,15).forEach(([k,v]) => {
+    msg += `  "${k}": ${v}\n`;
+  });
+  alert(msg);
+}
+
 function renderAll() {
   const ds = buildDataset();
   renderGeneral(ds);
