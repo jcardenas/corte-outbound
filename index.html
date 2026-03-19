@@ -1056,17 +1056,15 @@ function isToday(dateStr) {
 function filterRelevant(rows) {
   return rows.filter(row => {
     const p = processRow(row);
-    // EXACT match after normalization
     const campanaOk  = p.tipoCampana === 'PORTABILIDAD' || p.tipoCampana === 'MIGRACION BK';
     const productoOk = PRODUCTOS_N.includes(p.producto);
     if (!campanaOk || !productoOk) return false;
-    // Filter by today's date:
-    // DIGITADO → use FECHA DIGITACION (col AD)
-    // NUEVA / RECHAZO → use FECHA VENTA (col AC)
     const estadoGroup = getEstadoGroup(p.estadoServ);
     if (!estadoGroup) return false;
-    const fecha = estadoGroup === 'DIGITADO' ? p.fechaDigit : p.fechaVenta;
-    return isToday(fecha);
+    // Use fechaVenta for all — always populated
+    // For DIGITADO also accept if fechaDigit is today (in case fechaVenta is from yesterday)
+    const fechaOk = isToday(p.fechaVenta) || isToday(p.fechaDigit);
+    return fechaOk;
   });
 }
 
