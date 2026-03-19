@@ -748,12 +748,12 @@ const ESTADOS = {
   NUEVA: ['SEGUIMIENTO DIGITACION','RE-DIGITADACION','NUEVA','EN DIGITACION']
 };
 // Pre-normalized versions for comparison
-const CAMPANAS_N  = CAMPANAS.map(s => s.normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().trim());
-const PRODUCTOS_N = PRODUCTOS.map(s => s.normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().trim());
+const CAMPANAS_N  = ['PORTABILIDAD', 'MIGRACION BK']; // exact after normalize
+const PRODUCTOS_N = ['MIGRACION','MIGRACION POWER','LINEA NUEVA','LINEA NUEVA POWER','PORTABILIDAD','PORTABILIDAD POWER'];
 const ESTADOS_N = {
-  DIGITADO: ESTADOS.DIGITADO.map(s => s.normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().trim()),
-  RECHAZO:  ESTADOS.RECHAZO.map(s  => s.normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().trim()),
-  NUEVA:    ESTADOS.NUEVA.map(s    => s.normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().trim()),
+  DIGITADO: ['EN LEGALIZACION NUEVO','EN PROCESO DE ACTIVACION','LEGALIZACION GRABACION','PENDIENTE ENTREGA SIM'],
+  RECHAZO:  ['ALARMA POR PROCESO INCORRECTO','ALERTA FRAUDE PQRS','ANULADO','RECHAZO DIGITACION'],
+  NUEVA:    ['SEGUIMIENTO DIGITACION','RE-DIGITADACION','NUEVA','EN DIGITACION'],
 };
 const CONTRATOS = ['CONTRATO DIGITAL','CONTRATO GRABADO'];
 
@@ -1023,12 +1023,50 @@ function getEstadoGroup(estado) {
   return null;
 }
 
+function getTodayStr() {
+  const now = new Date();
+  const d = String(now.getDate()).padStart(2,'0');
+  const m = String(now.getMonth()+1).padStart(2,'0');
+  const y = now.getFullYear();
+  // Return multiple formats to match whatever the sheet uses
+  return {
+    ddmmyyyy: `${d}/${m}/${y}`,
+    mmddyyyy: `${m}/${d}/${y}`,
+    yyyymmdd: `${y}-${m}-${d}`,
+    ddmmyyyy2: `${d}-${m}-${y}`,
+    day: String(now.getDate()),
+    month: String(now.getMonth()+1),
+    year: String(y),
+    d, m, y: String(y)
+  };
+}
+
+function isToday(dateStr) {
+  if (!dateStr) return false;
+  const s = dateStr.toString().trim();
+  // Format is yyyy-mm-dd hh:mm:ss — just check the first 10 chars
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth()+1).padStart(2,'0');
+  const d = String(now.getDate()).padStart(2,'0');
+  const todayPrefix = y + '-' + m + '-' + d;
+  return s.startsWith(todayPrefix);
+}
+
 function filterRelevant(rows) {
   return rows.filter(row => {
-    const { tipoCampana, producto } = processRow(row);
-    const campanaOk  = CAMPANAS_N.includes(tipoCampana);
-    const productoOk = PRODUCTOS_N.includes(producto);
-    return campanaOk && productoOk;
+    const p = processRow(row);
+    // EXACT match after normalization
+    const campanaOk  = p.tipoCampana === 'PORTABILIDAD' || p.tipoCampana === 'MIGRACION BK';
+    const productoOk = PRODUCTOS_N.includes(p.producto);
+    if (!campanaOk || !productoOk) return false;
+    // Filter by today's date:
+    // DIGITADO → use FECHA DIGITACION (col AD)
+    // NUEVA / RECHAZO → use FECHA VENTA (col AC)
+    const estadoGroup = getEstadoGroup(p.estadoServ);
+    if (!estadoGroup) return false;
+    const fecha = estadoGroup === 'DIGITADO' ? p.fechaDigit : p.fechaVenta;
+    return isToday(fecha);
   });
 }
 
