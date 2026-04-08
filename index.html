@@ -517,20 +517,25 @@ function detectCols(headers){
 // ══════════════════════════════════════
 async function fetchCSV(url){
   const proxies=[
-    u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u),
     u=>'https://corsproxy.io/?'+encodeURIComponent(u),
     u=>'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(u),
+    u=>'https://thingproxy.freeboard.io/fetch/'+u,
+    u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u),
   ];
+  let lastErr;
   for(const p of proxies){
     try{
-      const r=await fetch(p(url),{cache:'no-store'});
+      const r=await fetch(p(url),{cache:'no-store',mode:'cors'});
       if(r.ok){
         const t=await r.text();
-        if(t&&t.length>50&&!t.startsWith('<!')) return t;
+        if(t&&t.length>50&&!t.startsWith('<!html')&&!t.startsWith('<html')&&!t.startsWith('<!DOCTYPE')){
+          console.log('proxy ok:', p(url).substring(0,50));
+          return t;
+        }
       }
-    }catch(e){console.warn('proxy failed',e);}
+    }catch(e){lastErr=e;console.warn('proxy failed:',e.message);}
   }
-  throw new Error('No se pudo conectar con Google Sheets. Verifica que la hoja esté publicada públicamente.');
+  throw lastErr||new Error('No se pudo conectar con Google Sheets. Verifica que la hoja esté publicada públicamente.');
 }
 
 // ══════════════════════════════════════
@@ -954,145 +959,173 @@ function updateAsesor(){
 // RENDER: ASISTENCIA
 // ══════════════════════════════════════
 function renderAsistencia(){
-  // planta = todos los asesores en coordMap
-  const planta = Object.entries(coordMap); // [[cedula, {nombreAsesor,coordinador,jefe,...}]]
+  const planta = Object.entries(coordMap);
   if(!planta.length){
     document.getElementById('asistencia-content').innerHTML=
-      '<div class="error-box"><strong>⚠️ Sin datos de planta</strong>La hoja COORDINADORES no está cargada.</div>';
+      '<div class="error-box"><strong>⚠️ Sin datos de planta</strong> La hoja COORDINADORES no está cargada.</div>';
     return;
   }
 
-  // Logueados = cedulas que aparecen en logueoData para el período seleccionado
   const logueados = new Set(Object.keys(logueoData));
 
-  // Agrupar planta por jefe -> coordinador
-  const estructura = {}; // {jefe: {coord: [{cedula, nombre, logueado, app}]}}
+  // Estructura: jefe -> coordinador -> [asesores]
+  const estructura = {};
   planta.forEach(([ced, info])=>{
-    const jefe = info.jefe||'Sin jefe';
+    const jefe  = info.jefe||'Sin jefe';
     const coord = info.coordinador||'Sin coordinador';
     if(!estructura[jefe]) estructura[jefe]={};
     if(!estructura[jefe][coord]) estructura[jefe][coord]=[];
     const logInfo = logueoData[ced];
     estructura[jefe][coord].push({
       cedula:ced,
-      nombre: info.nombreAsesor||ced,
-      logueado: logueados.has(ced),
-      app: logInfo?.app||null,
-      primerIngreso: logInfo?.primerIngreso||null,
-      tiempoTotal: logInfo?.tiempoTotal||null,
+      nombre:info.nombreAsesor||ced,
+      logueado:logueados.has(ced),
+      app:logInfo?.app||null,
+      primerIngreso:logInfo?.primerIngreso||null,
+      tiempoTotal:logInfo?.tiempoTotal||null,
     });
   });
 
-  // Global totals
-  const totalPlanta = planta.length;
+  const totalPlanta    = planta.length;
   const totalLogueados = planta.filter(([c])=>logueados.has(c)).length;
-  const totalAusentes = totalPlanta - totalLogueados;
-  const pctAsist = totalPlanta ? (totalLogueados/totalPlanta*100).toFixed(1) : 0;
-  const pctAus   = totalPlanta ? (totalAusentes/totalPlanta*100).toFixed(1) : 0;
-
-  // App distribution
-  const appCount = {mitrol:0,neotel:0,wolkvox:0};
+  const totalAusentes  = totalPlanta - totalLogueados;
+  const pctAsist       = totalPlanta?(totalLogueados/totalPlanta*100).toFixed(1):0;
+  const appCount       = {mitrol:0,neotel:0,wolkvox:0};
   Object.values(logueoData).forEach(d=>{ if(appCount[d.app]!==undefined) appCount[d.app]++; });
 
   function pctClass(p){ return p>=80?'ok':p>=60?'warn':'bad'; }
-  function barClass(p){ return p>=80?'green':p>=60?'warn':'bad'; }
 
+  const periodo = document.getElementById('dateSelectedLabel')?.textContent||'Hoy';
   let html = '';
 
-  // ── Global KPIs ──
-  html += '<div class="section-title">ASISTENCIA DEL DÍA <span class="badge">'+document.getElementById('dateSelectedLabel').textContent+'</span></div>';
-  html += '<div class="asist-kpi-grid">';
+  // ── KPIs globales ──
+  html += '<div class="section-title">ASISTENCIA <span class="badge">'+periodo+'</span></div>';
+  html += '<div class="kpi-grid g4" style="margin-bottom:24px">';
   html += '<div class="kpi-card red"><div class="kpi-label">PLANTA TOTAL</div><div class="kpi-value">'+totalPlanta+'</div><div class="kpi-sub">Asesores activos</div></div>';
   html += '<div class="kpi-card green"><div class="kpi-label">CONECTADOS</div><div class="kpi-value" style="color:var(--green)">'+totalLogueados+'</div><div class="kpi-sub">'+pctAsist+'% de la planta</div></div>';
-  html += '<div class="kpi-card orange"><div class="kpi-label">AUSENTES</div><div class="kpi-value" style="color:#DC2626">'+totalAusentes+'</div><div class="kpi-sub">'+pctAus+'% de la planta</div></div>';
-  html += '<div class="kpi-card blue"><div class="kpi-label">% ASISTENCIA</div><div class="kpi-value" style="color:var(--blue)">'+pctAsist+'%</div>';
-  html += '<div class="kpi-sub"><span class="app-badge app-mitrol">Mitrol '+appCount.mitrol+'</span> <span class="app-badge app-neotel">Neotel '+appCount.neotel+'</span> <span class="app-badge app-wolkvox">Wolkvox '+appCount.wolkvox+'</span></div></div>';
+  html += '<div class="kpi-card orange"><div class="kpi-label">AUSENTES</div><div class="kpi-value" style="color:#DC2626">'+totalAusentes+'</div><div class="kpi-sub">'+(totalPlanta?(totalAusentes/totalPlanta*100).toFixed(1):0)+'% de la planta</div></div>';
+  html += '<div class="kpi-card blue"><div class="kpi-label">APPS ACTIVAS</div><div class="kpi-value" style="color:var(--blue)">'+pctAsist+'%</div>';
+  html += '<div class="kpi-sub" style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px"><span class="app-badge app-mitrol">Mitrol '+appCount.mitrol+'</span><span class="app-badge app-neotel">Neotel '+appCount.neotel+'</span><span class="app-badge app-wolkvox">Wolkvox '+appCount.wolkvox+'</span></div></div>';
   html += '</div>';
 
-  // ── Por Jefe de Operación ──
-  html += '<div class="section-title">DETALLE POR JEFE DE OPERACIÓN</div>';
+  // ── 3 tarjetas por Jefe (resumen) ──
+  html += '<div class="section-title">RESUMEN POR JEFE DE OPERACIÓN</div>';
+  html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:28px">';
 
-  Object.entries(estructura).sort(([a],[b])=>a.localeCompare(b)).forEach(([jefe, coords])=>{
+  const jefeEntries = Object.entries(estructura).sort(([a],[b])=>a.localeCompare(b));
+
+  jefeEntries.forEach(([jefe, coords])=>{
     const jefeAsesores = Object.values(coords).flat();
-    const jTotal = jefeAsesores.length;
-    const jLogueados = jefeAsesores.filter(a=>a.logueado).length;
-    const jAusentes = jTotal - jLogueados;
-    const jPct = jTotal?(jLogueados/jTotal*100).toFixed(1):0;
+    const jTotal   = jefeAsesores.length;
+    const jLog     = jefeAsesores.filter(a=>a.logueado).length;
+    const jAus     = jTotal - jLog;
+    const jPct     = jTotal?(jLog/jTotal*100).toFixed(1):0;
+    const cls      = pctClass(parseFloat(jPct));
 
-    html += '<div class="asist-jefe-block">';
-    html += '<div class="asist-jefe-header">';
-    html += '<div class="asist-jefe-name">'+jefe+'</div>';
-    html += '<div class="asist-jefe-stats">';
-    html += '<div class="asist-stat"><div class="asist-stat-num">'+jTotal+'</div><div class="asist-stat-lbl">Planta</div></div>';
-    html += '<div class="asist-stat"><div class="asist-stat-num" style="color:#86EFAC">'+jLogueados+'</div><div class="asist-stat-lbl">Conectados</div></div>';
-    html += '<div class="asist-stat"><div class="asist-stat-num" style="color:#FCA5A5">'+jAusentes+'</div><div class="asist-stat-lbl">Ausentes</div></div>';
-    html += '<div class="asist-stat"><div class="asist-stat-num">'+jPct+'%</div><div class="asist-stat-lbl">Asistencia</div></div>';
-    html += '</div></div>';
+    html += '<div class="table-card" style="margin-bottom:0;overflow:hidden">';
+    // Header jefe
+    html += '<div style="background:var(--red);padding:14px 18px;display:flex;justify-content:space-between;align-items:center">';
+    html += '<div style="font-family:Barlow Condensed,sans-serif;font-weight:800;font-size:17px;color:white">'+jefe+'</div>';
+    html += '<span class="asist-pct '+cls+'" style="font-size:14px">'+jPct+'%</span>';
+    html += '</div>';
+    // Tabla de coordinadores — compacta
+    html += '<table style="font-size:12px">';
+    html += '<thead><tr style="background:var(--gray-50)">';
+    html += '<th>Coordinador</th><th class="tc">Planta</th><th class="tc" style="color:var(--green)">✓ Con.</th><th class="tc" style="color:#DC2626">✗ Aus.</th><th class="tc">%</th>';
+    html += '</tr></thead><tbody>';
 
-    html += '<div class="asist-table-wrap">';
-    // Header
-    html += '<div style="display:grid;grid-template-columns:1fr auto auto auto auto;padding:8px 18px;background:var(--gray-50);border-bottom:1px solid var(--gray-200);font-size:11px;font-weight:700;color:var(--gray-500);text-transform:uppercase;letter-spacing:0.5px;gap:12px">';
-    html += '<span>Coordinador</span><span style="text-align:center;min-width:60px">Conectados</span><span style="text-align:center;min-width:60px">Ausentes</span><span style="text-align:center;min-width:60px">% Asist.</span><span style="min-width:80px">Barra</span></div>';
-
-    // Each coordinator
     Object.entries(coords).sort(([,a],[,b])=>{
-      const aL=a.filter(x=>x.logueado).length, bL=b.filter(x=>x.logueado).length;
-      return bL-aL;
+      return b.filter(x=>x.logueado).length - a.filter(x=>x.logueado).length;
     }).forEach(([coord, asesores])=>{
-      const cTotal = asesores.length;
-      const cLog   = asesores.filter(a=>a.logueado).length;
-      const cAus   = cTotal - cLog;
-      const cPct   = cTotal?(cLog/cTotal*100).toFixed(1):0;
-      const cls    = pctClass(parseFloat(cPct));
-
-      html += '<div class="asist-coord-row">';
-      html += '<div>';
-      html +=   '<div class="asist-coord-name">'+coord+'</div>';
-      html +=   '<div style="font-size:11px;color:var(--gray-500)">'+cTotal+' asesores</div>';
-      html += '</div>';
-      html += '<div class="asist-num green" style="min-width:60px;text-align:center">'+cLog+'</div>';
-      html += '<div class="asist-num red" style="min-width:60px;text-align:center">'+cAus+'</div>';
-      html += '<div style="min-width:60px;text-align:center"><span class="asist-pct '+cls+'">'+cPct+'%</span></div>';
-      html += '<div class="asist-bar" style="min-width:80px"><div class="asist-bar-fill '+barClass(parseFloat(cPct))+'" style="width:'+cPct+'%"></div></div>';
-      html += '</div>';
-
-      // Detail: list of absent advisors
-      const ausentes = asesores.filter(a=>!a.logueado);
-      if(ausentes.length){
-        html += '<div style="padding:6px 18px 10px 28px;background:#FFF8F8;border-bottom:1px solid var(--gray-100)">';
-        html += '<div style="font-size:10px;font-weight:700;color:#DC2626;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Ausentes ('+ausentes.length+'):</div>';
-        html += '<div style="display:flex;flex-wrap:wrap;gap:4px">';
-        ausentes.forEach(a=>{
-          html += '<span style="background:#FEE2E2;color:#DC2626;border-radius:6px;padding:2px 8px;font-size:11px">'+a.nombre+'</span>';
-        });
-        html += '</div></div>';
-      }
-
-      // Connected apps summary
-      const conectados = asesores.filter(a=>a.logueado);
-      if(conectados.length){
-        const appsUsed = {};
-        conectados.forEach(a=>{ appsUsed[a.app]=(appsUsed[a.app]||0)+1; });
-        html += '<div style="padding:4px 18px 8px 28px;background:#F8FFF8;border-bottom:1px solid var(--gray-100)">';
-        html += '<div style="font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Conectados por app:</div>';
-        html += '<div style="display:flex;gap:6px;flex-wrap:wrap">';
-        Object.entries(appsUsed).forEach(([app,cnt])=>{
-          html += '<span class="app-badge app-'+app+'">'+app+' ('+cnt+')</span>';
-        });
-        html += '</div></div>';
-      }
+      const cT   = asesores.length;
+      const cL   = asesores.filter(a=>a.logueado).length;
+      const cA   = cT - cL;
+      const cPct = cT?(cL/cT*100).toFixed(0):0;
+      const ccls = pctClass(parseFloat(cPct));
+      html += '<tr>';
+      html += '<td style="font-weight:600">'+coord+'</td>';
+      html += '<td class="tc">'+cT+'</td>';
+      html += '<td class="tc" style="color:var(--green);font-weight:700">'+cL+'</td>';
+      html += '<td class="tc" style="color:#DC2626;font-weight:700">'+cA+'</td>';
+      html += '<td class="tc"><span class="asist-pct '+ccls+'">'+cPct+'%</span></td>';
+      html += '</tr>';
     });
 
-    // Jefe total row
-    html += '<div class="asist-total-row">';
-    html += '<span style="color:var(--red)">TOTAL '+jefe.toUpperCase()+'</span>';
-    html += '<span class="asist-num green" style="text-align:center">'+jLogueados+'</span>';
-    html += '<span class="asist-num red" style="text-align:center">'+jAusentes+'</span>';
-    html += '<span style="text-align:center"><span class="asist-pct '+pctClass(parseFloat(jPct))+'">'+jPct+'%</span></span>';
-    html += '<span></span>';
-    html += '</div>';
+    // Fila total jefe
+    html += '<tr style="background:var(--gray-50);border-top:2px solid var(--gray-200);font-weight:800">';
+    html += '<td style="color:var(--red)">TOTAL</td>';
+    html += '<td class="tc">'+jTotal+'</td>';
+    html += '<td class="tc" style="color:var(--green)">'+jLog+'</td>';
+    html += '<td class="tc" style="color:#DC2626">'+jAus+'</td>';
+    html += '<td class="tc"><span class="asist-pct '+cls+'">'+jPct+'%</span></td>';
+    html += '</tr>';
+    html += '</tbody></table></div>';
+  });
+  html += '</div>';
 
-    html += '</div></div>'; // table-wrap + jefe-block
+  // ── Detalle por Jefe: conectados y ausentes ──
+  html += '<div class="section-title">DETALLE DE ASESORES POR JEFE DE OPERACIÓN</div>';
+
+  jefeEntries.forEach(([jefe, coords])=>{
+    const jefeAsesores = Object.values(coords).flat();
+    const jLog = jefeAsesores.filter(a=>a.logueado).length;
+    const jAus = jefeAsesores.length - jLog;
+
+    html += '<div style="margin-bottom:24px">';
+    // Header
+    html += '<div style="background:var(--gray-800);color:white;padding:10px 18px;border-radius:10px 10px 0 0;display:flex;justify-content:space-between;align-items:center">';
+    html += '<span style="font-family:Barlow Condensed,sans-serif;font-weight:800;font-size:16px">'+jefe+'</span>';
+    html += '<span style="font-size:12px;opacity:0.8"><span style="color:#86EFAC">'+jLog+' conectados</span> · <span style="color:#FCA5A5">'+jAus+' ausentes</span></span>';
+    html += '</div>';
+    html += '<div style="border:1px solid var(--gray-200);border-top:none;border-radius:0 0 10px 10px;overflow:hidden">';
+
+    Object.entries(coords).sort().forEach(([coord, asesores],ci)=>{
+      const cLog = asesores.filter(a=>a.logueado);
+      const cAus = asesores.filter(a=>!a.logueado);
+
+      html += '<div style="'+(ci>0?'border-top:1px solid var(--gray-200)':'')+'">';
+      // Coord header
+      html += '<div style="background:var(--gray-50);padding:8px 16px;display:flex;justify-content:space-between;align-items:center">';
+      html += '<span style="font-weight:700;font-size:13px;color:var(--gray-800)">'+coord+'</span>';
+      html += '<span style="font-size:11px;color:var(--gray-500)">'+asesores.length+' asesores · <span style="color:var(--green)">'+cLog.length+' conectados</span> · <span style="color:#DC2626">'+cAus.length+' ausentes</span></span>';
+      html += '</div>';
+
+      // Dos columnas: conectados | ausentes
+      html += '<div style="display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--gray-100)">';
+
+      // Conectados
+      html += '<div style="padding:10px 14px;border-right:1px solid var(--gray-100)">';
+      html += '<div style="font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">✓ Conectados ('+cLog.length+')</div>';
+      if(cLog.length){
+        cLog.forEach(a=>{
+          html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--gray-100);font-size:12px">';
+          html += '<span>'+a.nombre+'</span>';
+          html += '<div style="display:flex;align-items:center;gap:4px">';
+          if(a.app) html += '<span class="app-badge app-'+a.app+'">'+a.app+'</span>';
+          if(a.primerIngreso) html += '<span style="color:var(--gray-500);font-size:10px">'+a.primerIngreso+'</span>';
+          html += '</div></div>';
+        });
+      } else {
+        html += '<div style="color:var(--gray-400);font-size:12px;font-style:italic">Sin conectados</div>';
+      }
+      html += '</div>';
+
+      // Ausentes
+      html += '<div style="padding:10px 14px;background:#FFFAFA">';
+      html += '<div style="font-size:10px;font-weight:700;color:#DC2626;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">✗ Ausentes ('+cAus.length+')</div>';
+      if(cAus.length){
+        cAus.forEach(a=>{
+          html += '<div style="padding:3px 0;border-bottom:1px solid #FEE2E2;font-size:12px;color:var(--gray-700)">'+a.nombre+'</div>';
+        });
+      } else {
+        html += '<div style="color:var(--gray-400);font-size:12px;font-style:italic">Sin ausentes 🎉</div>';
+      }
+      html += '</div>';
+
+      html += '</div></div>'; // grid + coord block
+    });
+
+    html += '</div></div>'; // inner + jefe block
   });
 
   document.getElementById('asistencia-content').innerHTML = html;
