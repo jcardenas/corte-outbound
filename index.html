@@ -515,17 +515,30 @@ function detectCols(headers){
 // ══════════════════════════════════════
 // FETCH WITH PROXY
 // ══════════════════════════════════════
+async function fetchWithTimeout(url, ms=6000){
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  try {
+    const r = await fetch(url, {cache:'no-store', mode:'cors', signal:controller.signal});
+    clearTimeout(timer);
+    return r;
+  } catch(e) {
+    clearTimeout(timer);
+    throw e;
+  }
+}
+
 async function fetchCSV(url){
   const proxies=[
     u=>'https://corsproxy.io/?'+encodeURIComponent(u),
     u=>'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(u),
-    u=>'https://thingproxy.freeboard.io/fetch/'+u,
     u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u),
+    u=>'https://thingproxy.freeboard.io/fetch/'+u,
   ];
   let lastErr;
   for(const p of proxies){
     try{
-      const r=await fetch(p(url),{cache:'no-store',mode:'cors'});
+      const r=await fetchWithTimeout(p(url), 5000);
       if(r.ok){
         const t=await r.text();
         if(t&&t.length>50&&!t.startsWith('<!html')&&!t.startsWith('<html')&&!t.startsWith('<!DOCTYPE')){
@@ -574,8 +587,16 @@ async function loadData(){
       console.log('v3 coordMap activos:', Object.keys(coordMap).length, '| excluidos (retiro/inactivo):', skippedRetiro);
     }catch(e){console.warn('coord sheet error',e);}
 
-    // Load logueo data
-    await loadLogueo();
+    // Load logueo data — con timeout de 8 segundos para no bloquear
+    try {
+      await Promise.race([
+        loadLogueo(),
+        new Promise((_,reject) => setTimeout(() => reject(new Error('timeout')), 8000))
+      ]);
+    } catch(e) {
+      console.warn('Logueo no disponible:', e.message);
+      logueoData = {};
+    }
 
     // Build dataset for today
     buildDataset();
