@@ -563,52 +563,70 @@ async function loadData(){
   btn.classList.add('loading'); btn.textContent='↻ Cargando...';
   setSyncStatus('loading');
   try{
-    // Load ventas
+    // ── PASO 1: Ventas (prioritario) ──
     const vText = await fetchCSV(CSV_BASE);
     const {headers, rows} = parseCSV(vText);
     detectCols(headers);
     ventasRows = rows;
-    console.log('v3 ventasRows:', ventasRows.length, '| sample[0][COL.tc]:', ventasRows[0]?.[COL.tc]);
+    console.log('v3 ventasRows:', ventasRows.length);
 
-    // Load coordinadores
+    // ── PASO 2: Coordinadores ──
     try{
       const cText = await fetchCSV(CSV_BASE+'&gid='+COORD_GID);
       const {rows:cRows} = parseCSV(cText);
       coordMap={};
-      let skippedRetiro = 0;
+      let skippedRetiro=0;
       cRows.forEach(r=>{
         const ced    = (r[0]||'').trim();
         const estado = (r[5]||'').toString().trim().toUpperCase();
         if(!ced || norm(ced)==='CEDULA') return;
-        // Solo ACTIVO — excluir RETIRO, RETIRADO, INACTIVO, etc.
-        if(estado && estado !== 'ACTIVO'){ skippedRetiro++; return; }
+        if(estado && estado!=='ACTIVO'){ skippedRetiro++; return; }
         coordMap[ced]={nombreAsesor:(r[1]||'').trim(), coordinador:(r[2]||'').trim()||'Sin coordinador', antiguedad:(r[4]||'').trim(), jefe:(r[6]||'').trim()||'Sin jefe'};
       });
-      console.log('v3 coordMap activos:', Object.keys(coordMap).length, '| excluidos (retiro/inactivo):', skippedRetiro);
-    }catch(e){console.warn('coord sheet error',e);}
+      console.log('v3 coordMap activos:', Object.keys(coordMap).length, '| excluidos:', skippedRetiro);
+    }catch(e){ console.warn('coord sheet error',e); }
 
-    // Load logueo data — con timeout de 8 segundos para no bloquear
-    try {
-      await Promise.race([
-        loadLogueo(),
-        new Promise((_,reject) => setTimeout(() => reject(new Error('timeout')), 8000))
-      ]);
-    } catch(e) {
-      console.warn('Logueo no disponible:', e.message);
-      logueoData = {};
-    }
-
-    // Build dataset for today
+    // ── PASO 3: Render inmediato sin logueo ──
     buildDataset();
     setSyncStatus('ok');
     document.getElementById('lastUpdate').textContent='Actualizado: '+new Date().toLocaleTimeString('es-CO');
     renderAll();
+
+    // ── PASO 4: Logueo en segundo plano ──
+    btn.classList.remove('loading'); btn.textContent='↻ Actualizar';
+    loadLogueoBackground();
+
   }catch(e){
     setSyncStatus('error');
     showError(e.message);
     console.error(e);
+    btn.classList.remove('loading'); btn.textContent='↻ Actualizar';
   }
-  btn.classList.remove('loading'); btn.textContent='↻ Actualizar';
+}
+
+async function loadLogueoBackground(){
+  // Carga logueo sin bloquear — actualiza solo la pestaña de asistencia cuando termina
+  const badge = document.createElement('span');
+  badge.id = 'logueo-loading';
+  badge.style = 'font-size:11px;color:var(--gray-500);margin-left:8px';
+  badge.textContent = '⟳ Cargando asistencia...';
+  document.getElementById('lastUpdate')?.appendChild(badge);
+
+  try{
+    await Promise.race([
+      loadLogueo(),
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout logueo')), 15000))
+    ]);
+    console.log('logueoData entries:', Object.keys(logueoData).length);
+    // Actualizar solo pestaña asistencia
+    renderAsistencia();
+    badge.textContent = '✓ Asistencia lista';
+    setTimeout(()=>badge.remove(), 3000);
+  }catch(e){
+    console.warn('Logueo background error:', e.message);
+    badge.textContent = '⚠ Asistencia no disponible';
+    setTimeout(()=>badge.remove(), 4000);
+  }
 }
 
 async function loadLogueo(){
