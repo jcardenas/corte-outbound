@@ -994,194 +994,176 @@ function updateAsesor(){
 // RENDER: ASISTENCIA
 // ======================================
 function renderAsistencia(){
-  const planta = Object.entries(coordMap);
+  var planta = Object.entries(coordMap);
   if(!planta.length){
-    document.getElementById('asistencia-content').innerHTML=
-      '<div class="error-box"><strong>! Sin datos de planta</strong> La hoja COORDINADORES no esta cargada.</div>';
+    document.getElementById('asistencia-content').innerHTML='<div class="error-box"><strong>Sin datos de planta</strong> La hoja COORDINADORES no esta cargada.</div>';
     return;
   }
 
-  const logueados = new Set(Object.keys(logueoData));
-
-  const estructura = {};
-  planta.forEach(([ced, info])=>{
-    const jefe  = info.jefe||'Sin jefe';
-    const coord = info.coordinador||'Sin coordinador';
+  var logueados = new Set(Object.keys(logueoData));
+  var estructura = {};
+  planta.forEach(function(entry){
+    var ced=entry[0], info=entry[1];
+    var jefe=info.jefe||'Sin jefe';
+    var coord=info.coordinador||'Sin coordinador';
     if(!estructura[jefe]) estructura[jefe]={};
     if(!estructura[jefe][coord]) estructura[jefe][coord]=[];
-    const logInfo = logueoData[ced];
+    var logInfo=logueoData[ced];
     estructura[jefe][coord].push({
-      cedula:ced,
-      nombre:info.nombreAsesor||ced,
+      cedula:ced, nombre:info.nombreAsesor||ced,
       logueado:logueados.has(ced),
-      app:logInfo?.app||null,
-      primerIngreso:logInfo?.primerIngreso||null,
+      app:logInfo?logInfo.app:null,
+      primerIngreso:logInfo?logInfo.primerIngreso:null,
     });
   });
 
-  const totalPlanta = planta.length;
-  const totalLog    = planta.filter(([c])=>logueados.has(c)).length;
-  const totalAus    = totalPlanta - totalLog;
-  const pctAsist    = totalPlanta?(totalLog/totalPlanta*100).toFixed(1):0;
-  const appCount    = {mitrol:0,neotel:0,wolkvox:0};
-  Object.values(logueoData).forEach(d=>{ if(appCount[d.app]!==undefined) appCount[d.app]++; });
-  const periodo = document.getElementById('dateSelectedLabel')?.textContent||'Hoy';
+  var totalPlanta=planta.length;
+  var totalLog=planta.filter(function(e){return logueados.has(e[0]);}).length;
+  var totalAus=totalPlanta-totalLog;
+  var pctAsist=totalPlanta?(totalLog/totalPlanta*100).toFixed(1):0;
+  var appCount={mitrol:0,neotel:0,wolkvox:0};
+  Object.values(logueoData).forEach(function(d){ if(appCount[d.app]!==undefined) appCount[d.app]++; });
+  var periodo=document.getElementById('dateSelectedLabel')?document.getElementById('dateSelectedLabel').textContent:'Hoy';
 
   function pctClass(p){ return p>=80?'ok':p>=60?'warn':'bad'; }
 
-  let html = '';
+  var html='';
 
-  // -- KPIs globales --
-  html += '<div class="section-title">ASISTENCIA <span class="badge">'+periodo+'</span></div>';
-  html += '<div style="background:var(--red);border-radius:12px;padding:16px 24px;display:flex;gap:32px;align-items:center;margin-bottom:24px;flex-wrap:wrap">';
-  html += kpiRojo('PLANTA', totalPlanta);
-  html += kpiRojo('CONECTADOS', totalLog, '#86EFAC');
-  html += kpiRojo('AUSENTES', totalAus, '#FCA5A5');
-  html += kpiRojo('ASISTENCIA', pctAsist+'%', 'white');
-  html += '<div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">';
-  html += '<span class="app-badge app-mitrol">Mitrol '+appCount.mitrol+'</span>';
-  html += '<span class="app-badge app-neotel">Neotel '+appCount.neotel+'</span>';
-  html += '<span class="app-badge app-wolkvox">Wolkvox '+appCount.wolkvox+'</span>';
-  html += '</div></div>';
+  // KPIs
+  html+='<div class="section-title">ASISTENCIA <span class="badge">'+periodo+'</span></div>';
+  html+='<div style="background:var(--red);border-radius:12px;padding:16px 24px;display:flex;gap:32px;align-items:center;margin-bottom:24px;flex-wrap:wrap">';
+  html+=kpiRojo('PLANTA',totalPlanta,'white');
+  html+=kpiRojo('CONECTADOS',totalLog,'#86EFAC');
+  html+=kpiRojo('AUSENTES',totalAus,'#FCA5A5');
+  html+=kpiRojo('ASISTENCIA',pctAsist+'%','white');
+  html+='<div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">';
+  html+='<span class="app-badge app-mitrol">Mitrol '+appCount.mitrol+'</span>';
+  html+='<span class="app-badge app-neotel">Neotel '+appCount.neotel+'</span>';
+  html+='<span class="app-badge app-wolkvox">Wolkvox '+appCount.wolkvox+'</span>';
+  html+='</div></div>';
 
-  // ==========================
-  // PARTE 1: 3 tablas resumen
-  // ==========================
-  html += '<div class="section-title">RESUMEN POR JEFE DE OPERACION</div>';
-  html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:32px">';
+  // 3 tablas resumen
+  html+='<div class="section-title">RESUMEN POR JEFE DE OPERACION</div>';
+  html+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:32px">';
 
-  const jefeEntries = Object.entries(estructura).sort(([a],[b])=>a.localeCompare(b));
+  var jefeEntries=Object.entries(estructura).sort(function(a,b){return a[0].localeCompare(b[0]);});
 
-  jefeEntries.forEach(([jefe, coords])=>{
-    const todos = Object.values(coords).flat();
-    const jT = todos.length, jL = todos.filter(a=>a.logueado).length, jA = jT-jL;
-    const jPct = jT?(jL/jT*100).toFixed(1):0;
+  jefeEntries.forEach(function(jefeEntry){
+    var jefe=jefeEntry[0], coords=jefeEntry[1];
+    var todos=Object.values(coords).reduce(function(a,b){return a.concat(b);},[]);
+    var jT=todos.length, jL=todos.filter(function(a){return a.logueado;}).length, jA=jT-jL;
+    var jPct=jT?(jL/jT*100).toFixed(1):0;
 
-    html += '<div class="table-card" style="margin-bottom:0">';
-    html += '<div style="background:var(--red);padding:12px 16px"><div style="font-family:Barlow Condensed,sans-serif;font-weight:800;font-size:16px;color:white">'+jefe+'</div></div>';
-    html += '<table><thead><tr>';
-    html += '<th>COORDINADOR</th>';  // CAMBIO: era "Nombre Jefe de Operacion"
-    html += '<th class="tc">Planta</th><th class="tc" style="color:var(--green)">Conectados</th><th class="tc" style="color:#DC2626">Ausentes</th><th class="tc">Asistencia</th>';
-    html += '</tr></thead><tbody>';
+    html+='<div class="table-card" style="margin-bottom:0">';
+    html+='<div style="background:var(--red);padding:12px 16px"><div style="font-family:Barlow Condensed,sans-serif;font-weight:800;font-size:16px;color:white">'+jefe+'</div></div>';
+    html+='<table><thead><tr>';
+    html+='<th>COORDINADOR</th><th class="tc">Planta</th><th class="tc" style="color:var(--green)">Conect.</th><th class="tc" style="color:#DC2626">Ausent.</th><th class="tc">Asist.</th>';
+    html+='</tr></thead><tbody>';
 
-    Object.entries(coords).sort(([a],[b])=>a.localeCompare(b)).forEach(([coord, asesores])=>{
-      const cT=asesores.length, cL=asesores.filter(a=>a.logueado).length, cA=cT-cL;
-      const cPct=cT?(cL/cT*100).toFixed(0):0;
-      html += '<tr><td style="font-weight:600;font-size:13px">'+coord+'</td>';
-      html += '<td class="tc">'+cT+'</td>';
-      html += '<td class="tc" style="color:var(--green);font-weight:700">'+cL+'</td>';
-      html += '<td class="tc" style="color:#DC2626;font-weight:700">'+cA+'</td>';
-      html += '<td class="tc"><span class="asist-pct '+pctClass(parseFloat(cPct))+'">'+cPct+'%</span></td></tr>';
+    Object.entries(coords).sort(function(a,b){return a[0].localeCompare(b[0]);}).forEach(function(ce){
+      var coord=ce[0], asesores=ce[1];
+      var cT=asesores.length, cL=asesores.filter(function(a){return a.logueado;}).length, cA=cT-cL;
+      var cPct=cT?(cL/cT*100).toFixed(0):0;
+      html+='<tr><td style="font-weight:600;font-size:13px">'+coord+'</td>';
+      html+='<td class="tc">'+cT+'</td>';
+      html+='<td class="tc" style="color:var(--green);font-weight:700">'+cL+'</td>';
+      html+='<td class="tc" style="color:#DC2626;font-weight:700">'+cA+'</td>';
+      html+='<td class="tc"><span class="asist-pct '+pctClass(parseFloat(cPct))+'">'+cPct+'%</span></td></tr>';
     });
 
-    html += '<tr style="background:var(--gray-50);border-top:2px solid var(--gray-200)">';
-    html += '<td style="font-weight:800;color:var(--red)">TOTAL</td>';
-    html += '<td class="tc tb">'+jT+'</td>';
-    html += '<td class="tc tb" style="color:var(--green)">'+jL+'</td>';
-    html += '<td class="tc tb" style="color:#DC2626">'+jA+'</td>';
-    html += '<td class="tc"><span class="asist-pct '+pctClass(parseFloat(jPct))+'">'+jPct+'%</span></td></tr>';
-    html += '</tbody></table></div>';
+    html+='<tr style="background:var(--gray-50);border-top:2px solid var(--gray-200)">';
+    html+='<td style="font-weight:800;color:var(--red)">TOTAL</td>';
+    html+='<td class="tc tb">'+jT+'</td>';
+    html+='<td class="tc tb" style="color:var(--green)">'+jL+'</td>';
+    html+='<td class="tc tb" style="color:#DC2626">'+jA+'</td>';
+    html+='<td class="tc"><span class="asist-pct '+pctClass(parseFloat(jPct))+'">'+jPct+'%</span></td></tr>';
+    html+='</tbody></table></div>';
   });
-  html += '</div>';
+  html+='</div>';
 
-  // ==========================
-  // PARTE 2: Detalle colapsable
-  // ==========================
-  html += '<div class="section-title">DETALLE POR COORDINADOR</div>';
+  // Detalle colapsable - 2 columnas
+  html+='<div class="section-title">DETALLE POR COORDINADOR</div>';
 
-  jefeEntries.forEach(([jefe, coords])=>{
-    html += '<div style="margin-bottom:24px">';
-    html += '<div style="background:var(--gray-800);color:white;padding:10px 18px;border-radius:10px 10px 0 0">';
-    html += '<span style="font-family:Barlow Condensed,sans-serif;font-weight:800;font-size:16px">'+jefe+'</span>';
-    html += '</div>';
-    // Grid 2 columnas para los coordinadores
-    html += '<div style="border:1px solid var(--gray-200);border-top:none;border-radius:0 0 10px 10px;overflow:hidden;display:grid;grid-template-columns:1fr 1fr">';
+  jefeEntries.forEach(function(jefeEntry){
+    var jefe=jefeEntry[0], coords=jefeEntry[1];
+    var todosJ=Object.values(coords).reduce(function(a,b){return a.concat(b);},[]);
+    var jLog=todosJ.filter(function(a){return a.logueado;}).length;
+    var jAus=todosJ.length-jLog;
 
-    const coordList = Object.entries(coords).sort(([a],[b])=>a.localeCompare(b));
-    coordList.forEach(([coord, asesores], ci)=>{
-      const cL = asesores.filter(a=>a.logueado).length;
-      const cA = asesores.length - cL;
-      const cPct = asesores.length?(cL/asesores.length*100).toFixed(0):0;
-      const uid = 'coord_'+jefe.replace(/\s/g,'_')+'_'+ci;
+    html+='<div style="margin-bottom:24px">';
+    html+='<div style="background:var(--gray-800);color:white;padding:10px 18px;border-radius:10px 10px 0 0">';
+    html+='<span style="font-family:Barlow Condensed,sans-serif;font-weight:800;font-size:16px">'+jefe+'</span>';
+    html+='<span style="float:right;font-size:12px;opacity:0.8">'+jLog+' conectados - '+jAus+' ausentes</span>';
+    html+='</div>';
+    html+='<div style="border:1px solid var(--gray-200);border-top:none;border-radius:0 0 10px 10px;overflow:hidden;display:grid;grid-template-columns:1fr 1fr">';
 
-      // Borde entre celdas
-      const borderStyle = (ci%2===0?'border-right:1px solid var(--gray-200);':'')+(ci>=2?'border-top:1px solid var(--gray-200);':'');
+    var coordList=Object.entries(coords).sort(function(a,b){return a[0].localeCompare(b[0]);});
+    coordList.forEach(function(ce, ci){
+      var coord=ce[0], asesores=ce[1];
+      var cL=asesores.filter(function(a){return a.logueado;}).length;
+      var cA=asesores.length-cL;
+      var cPct=asesores.length?(cL/asesores.length*100).toFixed(0):0;
+      var uid='c'+ci+'_'+jefe.substring(0,3).replace(/\s/g,'');
+      var borderL=ci%2===0?'border-right:1px solid var(--gray-200);':'';
+      var borderT=ci>=2?'border-top:1px solid var(--gray-200);':'';
 
-      html += '<div style="'+borderStyle+'">';
-
-      // Header coordinador -- clickeable para colapsar
-      html += '<div onclick="toggleCoord(''+uid+'')" style="cursor:pointer;background:var(--gray-50);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--gray-200);user-select:none">';
-      html += '<div>';
-      html += '<div style="font-weight:700;font-size:13px">'+coord+'</div>';
-      html += '<div style="font-size:11px;color:var(--gray-500);margin-top:2px">';
-      html += asesores.length+' asesores - ';
-      html += '<span style="color:var(--green)">'+cL+' &#10003;</span> - ';
-      html += '<span style="color:#DC2626">'+cA+' &#10007;</span>';
-      html += '</div></div>';
-      html += '<div style="display:flex;align-items:center;gap:8px">';
-      html += '<span class="asist-pct '+pctClass(parseFloat(cPct))+'">'+cPct+'%</span>';
-      html += '<span id="arrow_'+uid+'" style="color:var(--gray-400);font-size:12px;transition:transform 0.2s">&#9660;</span>';
-      html += '</div></div>';
+      html+='<div style="'+borderL+borderT+'">';
+      // Header con data-uid para toggle
+      html+='<div data-uid="'+uid+'" class="coord-toggle-header" style="cursor:pointer;background:var(--gray-50);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--gray-200)">';
+      html+='<div>';
+      html+='<div style="font-weight:700;font-size:13px">'+coord+'</div>';
+      html+='<div style="font-size:11px;color:var(--gray-500);margin-top:2px">'+asesores.length+' asesores - <span style="color:var(--green)">'+cL+' conectados</span> - <span style="color:#DC2626">'+cA+' ausentes</span></div>';
+      html+='</div>';
+      html+='<div style="display:flex;align-items:center;gap:8px">';
+      html+='<span class="asist-pct '+pctClass(parseFloat(cPct))+'">'+cPct+'%</span>';
+      html+='<span id="arrow_'+uid+'" style="color:var(--gray-400);font-size:12px">v</span>';
+      html+='</div></div>';
 
       // Tabla colapsable
-      html += '<div id="'+uid+'" style="display:none">';
-      html += '<table style="font-size:12px">';
-      html += '<thead><tr>';
-      html += '<th>ASESOR</th>';
-      html += '<th class="tc" style="color:var(--green)">Conectado</th>';
-      html += '<th class="tc" style="color:#DC2626">Ausente</th>';
-      html += '<th class="tc">App / Ingreso</th>';
-      html += '</tr></thead><tbody>';
+      html+='<div id="'+uid+'" style="display:none">';
+      html+='<table style="font-size:12px">';
+      html+='<thead><tr>';
+      html+='<th>ASESOR</th>';
+      html+='<th class="tc" style="color:var(--green)">Conectado</th>';
+      html+='<th class="tc" style="color:#DC2626">Ausente</th>';
+      html+='<th class="tc">App/Ingreso</th>';
+      html+='</tr></thead><tbody>';
 
-      asesores.sort((a,b)=>a.nombre.localeCompare(b.nombre)).forEach(a=>{
-        html += '<tr>';
-        html += '<td style="padding-left:14px">'+a.nombre+'</td>';
-        html += '<td class="tc">'+(a.logueado?'<span style="color:var(--green);font-weight:700">SI</span>':'')+'</td>';
-        html += '<td class="tc">'+(a.logueado?'':'<span style="color:#DC2626;font-weight:700">NO</span>')+'</td>';
-        html += '<td class="tc">';
+      asesores.sort(function(a,b){return a.nombre.localeCompare(b.nombre);}).forEach(function(a){
+        html+='<tr>';
+        html+='<td style="padding-left:14px">'+a.nombre+'</td>';
+        html+='<td class="tc">'+(a.logueado?'<span style="color:var(--green);font-weight:700">SI</span>':'')+'</td>';
+        html+='<td class="tc">'+(a.logueado?'':'<span style="color:#DC2626;font-weight:700">NO</span>')+'</td>';
+        html+='<td class="tc">';
         if(a.logueado){
-          if(a.app) html += '<span class="app-badge app-'+a.app+'">'+a.app+'</span> ';
-          if(a.primerIngreso) html += '<span style="font-size:10px;color:var(--gray-500)">'+a.primerIngreso+'</span>';
+          if(a.app) html+='<span class="app-badge app-'+a.app+'">'+a.app+'</span> ';
+          if(a.primerIngreso) html+='<span style="font-size:10px;color:var(--gray-500)">'+a.primerIngreso+'</span>';
         }
-        html += '</td></tr>';
+        html+='</td></tr>';
       });
 
-      html += '</tbody></table></div>';
-      html += '</div>'; // coord cell
+      html+='</tbody></table></div>';
+      html+='</div>';
     });
 
-    // Si hay numero impar de coords, agregar celda vacia
-    if(coordList.length%2!==0){
-      html += '<div style="border-left:1px solid var(--gray-200)"></div>';
-    }
-
-    html += '</div></div>'; // grid + jefe block
+    if(coordList.length%2!==0) html+='<div style="border-left:1px solid var(--gray-200)"></div>';
+    html+='</div></div>';
   });
 
-  document.getElementById('asistencia-content').innerHTML = html;
+  document.getElementById('asistencia-content').innerHTML=html;
+
+  // Event delegation para toggles -- evita inline onclick con comillas
+  document.getElementById('asistencia-content').addEventListener('click', function(e){
+    var header=e.target.closest('.coord-toggle-header');
+    if(!header) return;
+    var uid=header.getAttribute('data-uid');
+    var el=document.getElementById(uid);
+    var arrow=document.getElementById('arrow_'+uid);
+    if(!el) return;
+    var isOpen=el.style.display==='block';
+    el.style.display=isOpen?'none':'block';
+    if(arrow) arrow.textContent=isOpen?'v':'^';
+  });
 }
 
-function kpiRojo(label, val, color){
-  return '<div style="text-align:center">'
-    +'<div style="font-family:Barlow Condensed,sans-serif;font-weight:900;font-size:32px;color:'+(color||'white')+';line-height:1">'+val+'</div>'
-    +'<div style="font-size:10px;color:rgba(255,255,255,0.8);text-transform:uppercase;letter-spacing:0.7px;margin-top:3px">'+label+'</div>'
-    +'</div>';
-}
 
-window.toggleCoord = function(uid){
-  const el = document.getElementById(uid);
-  const arrow = document.getElementById('arrow_'+uid);
-  if(!el) return;
-  const open = el.style.display==='block';
-  el.style.display = open?'none':'block';
-  if(arrow) arrow.style.transform = open?'':'rotate(180deg)';
-};
-
-// ======================================
-// INIT
-// ======================================
-setInterval(()=>loadData(), REFRESH_MS);
-window.addEventListener('DOMContentLoaded', loadData);
-</script>
-</body>
-</html>
