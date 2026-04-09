@@ -108,7 +108,7 @@ tbody td{padding:10px 14px;color:var(--gray-800);}
 .asesor-cedula{font-size:11px;color:var(--gray-500);}
 .h200{height:200px;}
 
-/* ── ASISTENCIA ── */
+/* -- ASISTENCIA -- */
 .asist-kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
 .asist-jefe-block{margin-bottom:28px;}
 .asist-jefe-header{background:var(--red);color:white;border-radius:10px 10px 0 0;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;}
@@ -159,7 +159,7 @@ tbody td{padding:10px 14px;color:var(--gray-800);}
 .ctag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;}
 .ctag-d{background:#EDE9FE;color:#7C3AED;}
 .ctag-g{background:#FEF3C7;color:#D97706;}
-/* ── RESPONSIVE ── */
+/* -- RESPONSIVE -- */
 @media(max-width:1200px){
   .g6{grid-template-columns:repeat(3,1fr);}
   .jefe-grid{grid-template-columns:1fr 1fr;}
@@ -275,7 +275,7 @@ tbody td{padding:10px 14px;color:var(--gray-800);}
   .section-title::after{display:none;}
 }
 
-/* ── DATE FILTER BAR ── */
+/* -- DATE FILTER BAR -- */
 .date-bar{background:var(--white);border-bottom:1px solid var(--gray-200);padding:10px 32px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
 .date-bar-label{font-size:12px;font-weight:700;color:var(--gray-600);text-transform:uppercase;letter-spacing:0.5px;}
 .date-chip{border:1.5px solid var(--gray-300);background:var(--white);border-radius:20px;padding:5px 14px;font-family:'Barlow',sans-serif;font-size:12px;font-weight:600;color:var(--gray-700);cursor:pointer;transition:all 0.2s;}
@@ -359,27 +359,27 @@ tbody td{padding:10px 14px;color:var(--gray-800);}
 </div>
 
 <script>
-// ══════════════════════════════════════
+// ======================================
 // CONFIG
-// ══════════════════════════════════════
+// ======================================
 const BASE_ID = '2PACX-1vQgHotPl_7xflR7eYjPW0oUpeNCfnXkIs1oWWnitfjFhxBcuhNn1jzP6LXBYk9yZsDwFBnEzUZAN02N';
 const CSV_BASE = 'https://docs.google.com/spreadsheets/d/e/' + BASE_ID + '/pub?output=csv';
 const COORD_GID = '1133515436';
 const REFRESH_MS = 30 * 60 * 1000;
 
-// ── DATE FILTER STATE ──
+// -- DATE FILTER STATE --
 let dateFilter = { mode: 'hoy', from: null, to: null }; // mode: hoy|ayer|mes|custom
 
 function getDateRange(){
-  const now = new Date();
-  const fmt = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  var now = new Date();
+  var fmt = function(d){ return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate()); };
   if(dateFilter.mode === 'hoy'){
-    const t = fmt(now); return {from:t, to:t};
+    var t = fmt(now); return {from:t, to:t};
   } else if(dateFilter.mode === 'ayer'){
-    const y = new Date(now); y.setDate(y.getDate()-1); const t=fmt(y); return {from:t, to:t};
+    var y = new Date(now); y.setDate(y.getDate()-1); var t2=fmt(y); return {from:t2, to:t2};
   } else if(dateFilter.mode === 'mes'){
-    const from = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-01';
-    return {from, to:fmt(now)};
+    var from = now.getFullYear()+'-'+pad2(now.getMonth()+1)+'-01';
+    return {from:from, to:fmt(now)};
   } else {
     return {from:dateFilter.from, to:dateFilter.to};
   }
@@ -425,7 +425,7 @@ function applyCustomDate(){
   dateFilter = {mode:'custom', from, to};
   ['chipHoy','chipAyer','chipMes'].forEach(id=>document.getElementById(id)?.classList.remove('active'));
   document.getElementById('btnCustomDate')?.classList.add('active');
-  const label = from===to ? from : from+' → '+to;
+  const label = from===to ? from : from+' -> '+to;
   document.getElementById('dateSelectedLabel').textContent = label;
   document.getElementById('dateDropdown')?.classList.remove('open');
   buildDataset();
@@ -441,7 +441,7 @@ document.addEventListener('click', e=>{
 
 const CAMPANAS  = ['PORTABILIDAD','MIGRACION BK'];
 
-// ── LOGUEO CONFIG ──
+// -- LOGUEO CONFIG --
 const LOGUEO_BASE = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQC8FF6uFabgehEof4-3Yfp9ovoskG63y9rAoT1ceeqKdUguUEXdChXFax2EOsvcwaxz0uA0uuo_jQU/pub?output=csv';
 const LOGUEO_GIDS = {mitrol:'0', neotel:'2064793763', wolkvox:'2137155214'};
 let logueoData = {}; // {cedula: {app, fecha, primerIngreso, ultimaSalida, tiempoTotal}}
@@ -453,11 +453,18 @@ const EST_NUEVA    = ['SEGUIMIENTO DIGITACION','RE-DIGITACION','RE-DIGITADACION'
 // Column indices (Y=24, V=21, U=20, Z=25, AC=28, AD=29, O=14, P=15)
 let COL = {tc:24, pr:21, es:20, ct:25, fv:28, fd:29, ce:14, nu:15};
 
-// ══════════════════════════════════════
+// ======================================
 // HELPERS
-// ══════════════════════════════════════
-function norm(s){ return (s||'').toString().trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/\s+/g,' '); }
-function today(){ const n=new Date(); return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0'); }
+// ======================================
+function norm(s){
+  if(!s) return '';
+  return s.toString().trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/\s+/g,' ');
+}
+function pad2(n){ return n < 10 ? '0'+n : ''+n; }
+function today(){
+  var n=new Date();
+  return n.getFullYear()+'-'+pad2(n.getMonth()+1)+'-'+pad2(n.getDate());
+}
 function isToday(s){ return (s||'').toString().startsWith(today()); }
 function estadoGroup(e){
   const n=norm(e);
@@ -469,9 +476,9 @@ function estadoGroup(e){
 function countBy(arr,k){ const m={}; arr.forEach(r=>{m[r[k]]=(m[r[k]]||0)+1;}); return m; }
 function groupBy(arr,k){ const m={}; arr.forEach(r=>{if(!m[r[k]])m[r[k]]={};m[r[k]][r.producto]=(m[r[k]][r.producto]||0)+1;}); return m; }
 
-// ══════════════════════════════════════
-// CSV PARSER — returns array of arrays
-// ══════════════════════════════════════
+// ======================================
+// CSV PARSER -- returns array of arrays
+// ======================================
 function parseCSV(text){
   const lines = text.replace(/\r/g,'').split('\n').filter(l=>l.trim());
   if(!lines.length) return {headers:[], rows:[]};
@@ -512,9 +519,9 @@ function detectCols(headers){
   console.log('v3 COL detected:', JSON.stringify(COL), '| today:', today());
 }
 
-// ══════════════════════════════════════
+// ======================================
 // FETCH WITH PROXY
-// ══════════════════════════════════════
+// ======================================
 async function fetchCSV(url){
   const proxies=[
     u=>'https://corsproxy.io/?'+encodeURIComponent(u),
@@ -534,29 +541,29 @@ async function fetchCSV(url){
       }
     }catch(e){lastErr=e;console.warn('proxy failed:',e.message);}
   }
-  throw lastErr||new Error('No se pudo conectar con Google Sheets. Verifica que la hoja esté publicada públicamente.');
+  throw lastErr||new Error('No se pudo conectar con Google Sheets. Verifica que la hoja este publicada publicamente.');
 }
 
-// ══════════════════════════════════════
+// ======================================
 // DATA
-// ══════════════════════════════════════
+// ======================================
 let ventasRows = [];  // array of arrays
 let coordMap   = {};  // cedula -> {coordinador, jefe, antiguedad, nombreAsesor}
 let dataset    = [];  // processed rows for today
 
 async function loadData(){
   const btn=document.getElementById('btnRefresh');
-  btn.classList.add('loading'); btn.textContent='↻ Cargando...';
+  btn.classList.add('loading'); btn.textContent=' Cargando...';
   setSyncStatus('loading');
   try{
-    // ── PASO 1: Ventas (prioritario) ──
+    // -- PASO 1: Ventas (prioritario) --
     const vText = await fetchCSV(CSV_BASE);
     const {headers, rows} = parseCSV(vText);
     detectCols(headers);
     ventasRows = rows;
     console.log('v3 ventasRows:', ventasRows.length);
 
-    // ── PASO 2: Coordinadores ──
+    // -- PASO 2: Coordinadores --
     try{
       const cText = await fetchCSV(CSV_BASE+'&gid='+COORD_GID);
       const {rows:cRows} = parseCSV(cText);
@@ -572,30 +579,30 @@ async function loadData(){
       console.log('v3 coordMap activos:', Object.keys(coordMap).length, '| excluidos:', skippedRetiro);
     }catch(e){ console.warn('coord sheet error',e); }
 
-    // ── PASO 3: Render inmediato sin logueo ──
+    // -- PASO 3: Render inmediato sin logueo --
     buildDataset();
     setSyncStatus('ok');
     document.getElementById('lastUpdate').textContent='Actualizado: '+new Date().toLocaleTimeString('es-CO');
     renderAll();
 
-    // ── PASO 4: Logueo en segundo plano ──
-    btn.classList.remove('loading'); btn.textContent='↻ Actualizar';
+    // -- PASO 4: Logueo en segundo plano --
+    btn.classList.remove('loading'); btn.textContent=' Actualizar';
     loadLogueoBackground();
 
   }catch(e){
     setSyncStatus('error');
     showError(e.message);
     console.error(e);
-    btn.classList.remove('loading'); btn.textContent='↻ Actualizar';
+    btn.classList.remove('loading'); btn.textContent=' Actualizar';
   }
 }
 
 async function loadLogueoBackground(){
-  // Carga logueo sin bloquear — actualiza solo la pestaña de asistencia cuando termina
+  // Carga logueo sin bloquear -- actualiza solo la pestana de asistencia cuando termina
   const badge = document.createElement('span');
   badge.id = 'logueo-loading';
   badge.style = 'font-size:11px;color:var(--gray-500);margin-left:8px';
-  badge.textContent = '⟳ Cargando asistencia...';
+  badge.textContent = '&#8635; Cargando asistencia...';
   document.getElementById('lastUpdate')?.appendChild(badge);
 
   try{
@@ -604,13 +611,13 @@ async function loadLogueoBackground(){
       new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout logueo')), 15000))
     ]);
     console.log('logueoData entries:', Object.keys(logueoData).length);
-    // Actualizar solo pestaña asistencia
+    // Actualizar solo pestana asistencia
     renderAsistencia();
-    badge.textContent = '✓ Asistencia lista';
+    badge.textContent = '&#10003; Asistencia lista';
     setTimeout(()=>badge.remove(), 3000);
   }catch(e){
     console.warn('Logueo background error:', e.message);
-    badge.textContent = '⚠ Asistencia no disponible';
+    badge.textContent = '! Asistencia no disponible';
     setTimeout(()=>badge.remove(), 4000);
   }
 }
@@ -627,7 +634,7 @@ async function loadLogueo(){
         // Columns: ID(0), CEDULA(1), FECHA(2), PRIMER_INGRESO(3), ULTIMA_SALIDA(4), TIEMPO_TOTAL(5)
         const cedula = (r[1]||'').toString().trim();
         const fecha  = (r[2]||'').toString().trim().substring(0,10);
-        if(!cedula || cedula.toUpperCase()==='CEDULA' || cedula.toUpperCase()==='CÉDULA') return;
+        if(!cedula || cedula.toUpperCase()==='CEDULA' || cedula.toUpperCase()==='CEDULA') return;
         if(fecha < from || fecha > to) return;
         // Keep most recent entry per cedula
         if(!logueoData[cedula] || fecha > logueoData[cedula].fecha){
@@ -674,29 +681,29 @@ function buildDataset(){
   console.log('v3 dataset:', ok, '| skipped camp:', skCamp, 'prod:', skProd, 'est:', skEst, 'fecha:', skFecha);
 }
 
-// ══════════════════════════════════════
+// ======================================
 // DEBUG
-// ══════════════════════════════════════
+// ======================================
 function runDebug(){
   const t=today();
   const camps={};
   ventasRows.forEach(r=>{const v=(r[COL.tc]||'').trim();camps[v]=(camps[v]||0)+1;});
   const topCamps=Object.entries(camps).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([k,v])=>'"'+k+'": '+v).join('\n');
   const conHoy=ventasRows.filter(r=>(r[COL.fv]||'').startsWith(t)||(r[COL.fd]||'').startsWith(t)).length;
-  alert('=== DEBUG v3 ===\nTotal filas: '+ventasRows.length+'\nFecha hoy: '+t+'\nFilas con fecha hoy: '+conHoy+'\nDataset hoy: '+dataset.length+'\nCOL: '+JSON.stringify(COL)+'\n\nCampañas top:\n'+topCamps);
+  alert('=== DEBUG v3 ===\nTotal filas: '+ventasRows.length+'\nFecha hoy: '+t+'\nFilas con fecha hoy: '+conHoy+'\nDataset hoy: '+dataset.length+'\nCOL: '+JSON.stringify(COL)+'\n\nCampanas top:\n'+topCamps);
 }
 
-// ══════════════════════════════════════
+// ======================================
 // UTILS
-// ══════════════════════════════════════
+// ======================================
 function setSyncStatus(s){
   const dot=document.getElementById('syncDot'),st=document.getElementById('syncStatus');
-  if(s==='ok'){dot.style.background='#16A34A';st.textContent='En línea · Auto 30m';}
-  else if(s==='error'){dot.style.background='#DC2626';st.textContent='Error de conexión';}
+  if(s==='ok'){dot.style.background='#16A34A';st.textContent='En linea - Auto 30m';}
+  else if(s==='error'){dot.style.background='#DC2626';st.textContent='Error de conexion';}
   else{dot.style.background='#D97706';st.textContent='Cargando...';}
 }
 function showError(msg){
-  const html='<div class="error-box"><strong>❌ Error al cargar datos</strong>'+msg+'</div>';
+  const html='<div class="error-box"><strong>X Error al cargar datos</strong>'+msg+'</div>';
   ['general-content','coord-content','asesor-content'].forEach(id=>document.getElementById(id).innerHTML=html);
 }
 function showTab(tab){
@@ -707,41 +714,41 @@ function showTab(tab){
 let charts={};
 function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
 
-// ══════════════════════════════════════
+// ======================================
 // RENDER ALL
-// ══════════════════════════════════════
+// ======================================
 function renderAll(){ renderGeneral(); renderCoordinador(); renderAsesor(); renderAsistencia(); }
 
-// ── GENERAL ──
+// -- GENERAL --
 function renderGeneral(){
   const ds=dataset, total=ds.length;
   const byProd=countBy(ds,'producto'), byEst=countBy(ds,'estadoGroup'), byCont=countBy(ds,'contrato');
   const jefes=[...new Set(ds.map(r=>r.jefe))].filter(Boolean);
   const jefeProds=groupBy(ds,'jefe');
 
-  const estPct=(k)=>total?((byEst[k]||0)/total*100).toFixed(1)+'%':'—';
-  const prdPct=(k)=>total?((byProd[k]||0)/total*100).toFixed(1)+'%':'—';
+  const estPct=(k)=>total?((byEst[k]||0)/total*100).toFixed(1)+'%':'--';
+  const prdPct=(k)=>total?((byProd[k]||0)/total*100).toFixed(1)+'%':'--';
 
   const {from:df,to:dt}=getDateRange();
-  const rangeLabel = df===dt ? df : df+' → '+dt;
+  const rangeLabel = df===dt ? df : df+' -> '+dt;
   document.getElementById('general-content').innerHTML=`
-  <div class="section-title">RESUMEN — ${rangeLabel} <span class="badge">LIVE</span></div>
+  <div class="section-title">RESUMEN -- ${rangeLabel} <span class="badge">LIVE</span></div>
   <div class="kpi-grid g6">
     ${PRODUCTOS.map(p=>`<div class="kpi-card ${p.includes('PORT')?'red':p.includes('MIGRA')?'blue':'green'}"><div class="kpi-label">${p}</div><div class="kpi-value">${byProd[p]||0}</div><div class="kpi-sub">${prdPct(p)}</div></div>`).join('')}
   </div>
   <div class="kpi-grid g4">
-    <div class="kpi-card red"><div class="kpi-label">TOTAL VENTAS</div><div class="kpi-value">${total}</div><div class="kpi-sub">Portabilidad + Migración + L.Nueva</div></div>
-    <div class="kpi-card blue"><div class="kpi-label">CONTRATO DIGITAL</div><div class="kpi-value">${byContrato('CONTRATO DIGITAL',byCont)}</div><div class="kpi-sub">${total?(byContrato('CONTRATO DIGITAL',byCont)/total*100).toFixed(1)+'%':'—'}</div></div>
-    <div class="kpi-card orange"><div class="kpi-label">CONTRATO GRABADO</div><div class="kpi-value">${byContrato('CONTRATO GRABADO',byCont)}</div><div class="kpi-sub">${total?(byContrato('CONTRATO GRABADO',byCont)/total*100).toFixed(1)+'%':'—'}</div></div>
-    <div class="kpi-card gray"><div class="kpi-label">ASESORES CON VENTA</div><div class="kpi-value">${new Set(ds.map(r=>r.cedula)).size}</div><div class="kpi-sub">Únicos activos hoy</div></div>
+    <div class="kpi-card red"><div class="kpi-label">TOTAL VENTAS</div><div class="kpi-value">${total}</div><div class="kpi-sub">Portabilidad + Migracion + L.Nueva</div></div>
+    <div class="kpi-card blue"><div class="kpi-label">CONTRATO DIGITAL</div><div class="kpi-value">${byContrato('CONTRATO DIGITAL',byCont)}</div><div class="kpi-sub">${total?(byContrato('CONTRATO DIGITAL',byCont)/total*100).toFixed(1)+'%':'--'}</div></div>
+    <div class="kpi-card orange"><div class="kpi-label">CONTRATO GRABADO</div><div class="kpi-value">${byContrato('CONTRATO GRABADO',byCont)}</div><div class="kpi-sub">${total?(byContrato('CONTRATO GRABADO',byCont)/total*100).toFixed(1)+'%':'--'}</div></div>
+    <div class="kpi-card gray"><div class="kpi-label">ASESORES CON VENTA</div><div class="kpi-value">${new Set(ds.map(r=>r.cedula)).size}</div><div class="kpi-sub">Unicos activos hoy</div></div>
   </div>
   <div class="section-title">ESTADOS DE VENTA</div>
   <div class="estado-row">
-    <div class="estado-card d"><div class="estado-icon">📋</div><div><div class="estado-label">DIGITADO</div><div class="estado-num">${byEst['D']||0}</div><div class="estado-pct">${estPct('D')} del total</div></div></div>
-    <div class="estado-card r"><div class="estado-icon">⚠️</div><div><div class="estado-label">RECHAZOS</div><div class="estado-num">${byEst['R']||0}</div><div class="estado-pct">${estPct('R')} del total</div></div></div>
-    <div class="estado-card n"><div class="estado-icon">🟢</div><div><div class="estado-label">NUEVA</div><div class="estado-num">${byEst['N']||0}</div><div class="estado-pct">${estPct('N')} del total</div></div></div>
+    <div class="estado-card d"><div class="estado-icon"></div><div><div class="estado-label">DIGITADO</div><div class="estado-num">${byEst['D']||0}</div><div class="estado-pct">${estPct('D')} del total</div></div></div>
+    <div class="estado-card r"><div class="estado-icon">!</div><div><div class="estado-label">RECHAZOS</div><div class="estado-num">${byEst['R']||0}</div><div class="estado-pct">${estPct('R')} del total</div></div></div>
+    <div class="estado-card n"><div class="estado-icon"></div><div><div class="estado-label">NUEVA</div><div class="estado-num">${byEst['N']||0}</div><div class="estado-pct">${estPct('N')} del total</div></div></div>
   </div>
-  <div class="section-title">POR JEFE DE OPERACIÓN</div>
+  <div class="section-title">POR JEFE DE OPERACION</div>
   <div class="jefe-grid">
     ${jefes.map(j=>{
       const jr=ds.filter(r=>r.jefe===j),jp=countBy(jr,'producto'),je=countBy(jr,'estadoGroup');
@@ -755,11 +762,11 @@ function renderGeneral(){
     }).join('')}
   </div>
   <div class="grid-2">
-    <div class="chart-card"><div class="chart-title">Distribución por Producto</div><div style="height:240px"><canvas id="chProd"></canvas></div></div>
-    <div class="chart-card"><div class="chart-title">Ventas por Jefe de Operación</div><div style="height:240px"><canvas id="chJefe"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">Distribucion por Producto</div><div style="height:240px"><canvas id="chProd"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">Ventas por Jefe de Operacion</div><div style="height:240px"><canvas id="chJefe"></canvas></div></div>
   </div>
-  <div class="table-card"><div class="table-card-header"><div class="table-card-title">Resumen Producto × Estado</div></div>
-  <table><thead><tr><th>Producto</th><th class="tc">Digitado</th><th class="tc">Rechazo</th><th class="tc">Nueva</th><th class="tc">Total</th><th>Participación</th></tr></thead><tbody>
+  <div class="table-card"><div class="table-card-header"><div class="table-card-title">Resumen Producto x Estado</div></div>
+  <table><thead><tr><th>Producto</th><th class="tc">Digitado</th><th class="tc">Rechazo</th><th class="tc">Nueva</th><th class="tc">Total</th><th>Participacion</th></tr></thead><tbody>
   ${PRODUCTOS.map(p=>{const r=ds.filter(x=>x.producto===p),e=countBy(r,'estadoGroup'),t=r.length,pct=total?(t/total*100).toFixed(1):0;
     return `<tr><td><strong>${p}</strong></td><td class="tc"><span class="pill pill-d">${e['D']||0}</span></td><td class="tc"><span class="pill pill-r">${e['R']||0}</span></td><td class="tc"><span class="pill pill-n">${e['N']||0}</span></td><td class="tc tb">${t}</td><td><div class="pbar-wrap"><div class="pbar-bg"><div class="pbar-fill" style="width:${pct}%"></div></div><span class="pbar-pct">${pct}%</span></div></td></tr>`;
   }).join('')}
@@ -774,7 +781,7 @@ function renderGeneral(){
 
 function byContrato(k,m){return m[k]||0;}
 
-// ── COORDINADOR ──
+// -- COORDINADOR --
 function renderCoordinador(){
   const ds=dataset;
 
@@ -839,13 +846,13 @@ function renderCoordinador(){
       const pct=grandTotal?(map[c].total/grandTotal*100).toFixed(1):0;
       tbody+='<tr>';
       tbody+='<td><span class="rank-num '+(i<3?'top':'')+'" style="margin-right:6px">'+(i+1)+'</span><strong>'+c+'</strong></td>';
-      tbody+='<td style="font-size:11px;color:var(--gray-600)">'+(jefeMap[c]||'—')+'</td>';
+      tbody+='<td style="font-size:11px;color:var(--gray-600)">'+(jefeMap[c]||'--')+'</td>';
       g.prods.forEach(p=>{
         const m=map[c][p];
-        tbody+='<td class="tc" style="border-left:1px solid var(--gray-200)">'+(m.d?'<span style="background:var(--blue-light);color:var(--blue);border-radius:10px;padding:2px 7px;font-size:11px;font-weight:700">'+m.d+'</span>':'<span style="color:var(--gray-300)">—</span>')+'</td>';
-        tbody+='<td class="tc">'+(m.r?'<span style="background:#FEE2E2;color:#DC2626;border-radius:10px;padding:2px 7px;font-size:11px;font-weight:700">'+m.r+'</span>':'<span style="color:var(--gray-300)">—</span>')+'</td>';
-        tbody+='<td class="tc">'+(m.n?'<span style="background:var(--green-light);color:var(--green);border-radius:10px;padding:2px 7px;font-size:11px;font-weight:700">'+m.n+'</span>':'<span style="color:var(--gray-300)">—</span>')+'</td>';
-        tbody+='<td class="tc tb" style="color:'+g.color+'">'+(m.total||'<span style="color:var(--gray-300)">—</span>')+'</td>';
+        tbody+='<td class="tc" style="border-left:1px solid var(--gray-200)">'+(m.d?'<span style="background:var(--blue-light);color:var(--blue);border-radius:10px;padding:2px 7px;font-size:11px;font-weight:700">'+m.d+'</span>':'<span style="color:var(--gray-300)">--</span>')+'</td>';
+        tbody+='<td class="tc">'+(m.r?'<span style="background:#FEE2E2;color:#DC2626;border-radius:10px;padding:2px 7px;font-size:11px;font-weight:700">'+m.r+'</span>':'<span style="color:var(--gray-300)">--</span>')+'</td>';
+        tbody+='<td class="tc">'+(m.n?'<span style="background:var(--green-light);color:var(--green);border-radius:10px;padding:2px 7px;font-size:11px;font-weight:700">'+m.n+'</span>':'<span style="color:var(--gray-300)">--</span>')+'</td>';
+        tbody+='<td class="tc tb" style="color:'+g.color+'">'+(m.total||'<span style="color:var(--gray-300)">--</span>')+'</td>';
       });
       tbody+='<td class="tc tb" style="color:'+g.color+';background:'+g.light+';font-size:16px">'+map[c].total+'</td>';
       tbody+='<td class="tc" style="color:'+g.color+';font-weight:600">'+pct+'%</td>';
@@ -884,10 +891,10 @@ function renderCoordinador(){
     return bH;
   }
 
-  let html='<div class="section-title">VENTAS POR COORDINADOR — DESGLOSE POR PRODUCTO <span class="badge">HOY</span></div>';
+  let html='<div class="section-title">VENTAS POR COORDINADOR -- DESGLOSE POR PRODUCTO <span class="badge">HOY</span></div>';
   GRUPOS.forEach(g=>{ html+=tablaGrupo(g); });
 
-  html+='<div class="section-title">VENTAS POR HORA — POR TIPO DE PRODUCTO</div>';
+  html+='<div class="section-title">VENTAS POR HORA -- POR TIPO DE PRODUCTO</div>';
   html+='<div class="hora-charts-grid">';
   GRUPOS.forEach(g=>{
     html+='<div class="chart-card" style="margin-bottom:0;padding:0;overflow:hidden">'
@@ -914,7 +921,7 @@ function renderCoordinador(){
   });
 }
 
-// ── ASESOR ──
+// -- ASESOR --
 function renderAsesor(){
   const ds=dataset;
   const jefes=['Todos',...new Set(ds.map(r=>r.jefe)).values()].filter(Boolean);
@@ -929,7 +936,7 @@ function renderAsesor(){
   </div>
   <div class="kpi-grid g3" id="aKpis"></div>
   <div class="grid-2" style="margin-bottom:24px">
-    <div class="chart-card"><div class="chart-title">Ventas por Hora del Día</div><div class="h200"><canvas id="chAHora"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">Ventas por Hora del Dia</div><div class="h200"><canvas id="chAHora"></canvas></div></div>
     <div class="chart-card"><div class="chart-title">Asesores con Venta por Coordinador</div><div class="h200"><canvas id="chAPct"></canvas></div></div>
   </div>
   <div class="table-card"><div class="table-card-header"><div class="table-card-title">Ranking de Asesores</div><div style="font-size:12px;color:var(--gray-500)" id="aTableSub"></div></div><div id="aTableBody"></div></div>`;
@@ -947,7 +954,7 @@ function updateAsesor(){
   document.getElementById('aKpis').innerHTML=`
     <div class="kpi-card red"><div class="kpi-label">Total Ventas</div><div class="kpi-value">${total}</div></div>
     <div class="kpi-card blue"><div class="kpi-label">Asesores con Venta</div><div class="kpi-value">${asesores}</div></div>
-    <div class="kpi-card green"><div class="kpi-label">Digitado</div><div class="kpi-value">${byEst['D']||0}</div><div class="kpi-sub">${total?((byEst['D']||0)/total*100).toFixed(1)+'%':'—'}</div></div>`;
+    <div class="kpi-card green"><div class="kpi-label">Digitado</div><div class="kpi-value">${byEst['D']||0}</div><div class="kpi-sub">${total?((byEst['D']||0)/total*100).toFixed(1)+'%':'--'}</div></div>`;
 
   // Ranking
   const am={};
@@ -960,10 +967,10 @@ function updateAsesor(){
     a.prods[r.producto]=(a.prods[r.producto]||0)+1;
   });
   const sorted=Object.values(am).sort((a,b)=>b.v-a.v);
-  document.getElementById('aTableSub').textContent=asesores+' asesores · '+total+' ventas';
+  document.getElementById('aTableSub').textContent=asesores+' asesores - '+total+' ventas';
   document.getElementById('aTableBody').innerHTML=sorted.length?`
   <table><thead><tr><th>#</th><th>Asesor</th><th>Coordinador</th><th>Jefe Op.</th><th class="tc">Ventas</th><th class="tc">Dig.</th><th class="tc">Rec.</th><th class="tc">Nueva</th><th>Productos</th></tr></thead><tbody>
-  ${sorted.map((a,i)=>`<tr><td><span class="rank-num ${i<3?'top':''}">${i+1}</span></td><td><div class="asesor-name">${a.nombre||'—'}</div><div class="asesor-cedula">${a.cedula}</div></td><td style="font-size:12px">${a.coordinador}</td><td style="font-size:12px">${a.jefe}</td><td class="tc tb" style="color:var(--red)">${a.v}</td><td class="tc"><span class="pill pill-d">${a.d}</span></td><td class="tc"><span class="pill pill-r">${a.rx}</span></td><td class="tc"><span class="pill pill-n">${a.n}</span></td><td style="font-size:11px">${PRODUCTOS.filter(p=>a.prods[p]).map(p=>`<span style="background:var(--gray-100);border-radius:4px;padding:1px 6px;margin:1px;display:inline-block">${p.replace(' POWER','⚡')}: ${a.prods[p]}</span>`).join('')}</td></tr>`).join('')}
+  ${sorted.map((a,i)=>`<tr><td><span class="rank-num ${i<3?'top':''}">${i+1}</span></td><td><div class="asesor-name">${a.nombre||'--'}</div><div class="asesor-cedula">${a.cedula}</div></td><td style="font-size:12px">${a.coordinador}</td><td style="font-size:12px">${a.jefe}</td><td class="tc tb" style="color:var(--red)">${a.v}</td><td class="tc"><span class="pill pill-d">${a.d}</span></td><td class="tc"><span class="pill pill-r">${a.rx}</span></td><td class="tc"><span class="pill pill-n">${a.n}</span></td><td style="font-size:11px">${PRODUCTOS.filter(p=>a.prods[p]).map(p=>`<span style="background:var(--gray-100);border-radius:4px;padding:1px 6px;margin:1px;display:inline-block">${p.replace(' POWER','')}: ${a.prods[p]}</span>`).join('')}</td></tr>`).join('')}
   </tbody></table>`:'<div class="empty-state">Sin datos</div>';
 
   // Chart hora
@@ -983,14 +990,14 @@ function updateAsesor(){
   if(ctxAP) charts['chAPct']=new Chart(ctxAP,{type:'bar',data:{labels:pctD.map(x=>x.c),datasets:[{data:pctD.map(x=>x.n),backgroundColor:'#DA0027',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true}}}});
 }
 
-// ══════════════════════════════════════
+// ======================================
 // RENDER: ASISTENCIA
-// ══════════════════════════════════════
+// ======================================
 function renderAsistencia(){
   const planta = Object.entries(coordMap);
   if(!planta.length){
     document.getElementById('asistencia-content').innerHTML=
-      '<div class="error-box"><strong>⚠️ Sin datos de planta</strong> La hoja COORDINADORES no está cargada.</div>';
+      '<div class="error-box"><strong>! Sin datos de planta</strong> La hoja COORDINADORES no esta cargada.</div>';
     return;
   }
 
@@ -1024,7 +1031,7 @@ function renderAsistencia(){
 
   let html = '';
 
-  // ── KPIs globales ──
+  // -- KPIs globales --
   html += '<div class="section-title">ASISTENCIA <span class="badge">'+periodo+'</span></div>';
   html += '<div style="background:var(--red);border-radius:12px;padding:16px 24px;display:flex;gap:32px;align-items:center;margin-bottom:24px;flex-wrap:wrap">';
   html += kpiRojo('PLANTA', totalPlanta);
@@ -1037,10 +1044,10 @@ function renderAsistencia(){
   html += '<span class="app-badge app-wolkvox">Wolkvox '+appCount.wolkvox+'</span>';
   html += '</div></div>';
 
-  // ══════════════════════════
+  // ==========================
   // PARTE 1: 3 tablas resumen
-  // ══════════════════════════
-  html += '<div class="section-title">RESUMEN POR JEFE DE OPERACIÓN</div>';
+  // ==========================
+  html += '<div class="section-title">RESUMEN POR JEFE DE OPERACION</div>';
   html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:32px">';
 
   const jefeEntries = Object.entries(estructura).sort(([a],[b])=>a.localeCompare(b));
@@ -1053,7 +1060,7 @@ function renderAsistencia(){
     html += '<div class="table-card" style="margin-bottom:0">';
     html += '<div style="background:var(--red);padding:12px 16px"><div style="font-family:Barlow Condensed,sans-serif;font-weight:800;font-size:16px;color:white">'+jefe+'</div></div>';
     html += '<table><thead><tr>';
-    html += '<th>COORDINADOR</th>';  // CAMBIO: era "Nombre Jefe de Operación"
+    html += '<th>COORDINADOR</th>';  // CAMBIO: era "Nombre Jefe de Operacion"
     html += '<th class="tc">Planta</th><th class="tc" style="color:var(--green)">Conectados</th><th class="tc" style="color:#DC2626">Ausentes</th><th class="tc">Asistencia</th>';
     html += '</tr></thead><tbody>';
 
@@ -1077,9 +1084,9 @@ function renderAsistencia(){
   });
   html += '</div>';
 
-  // ══════════════════════════
+  // ==========================
   // PARTE 2: Detalle colapsable
-  // ══════════════════════════
+  // ==========================
   html += '<div class="section-title">DETALLE POR COORDINADOR</div>';
 
   jefeEntries.forEach(([jefe, coords])=>{
@@ -1102,18 +1109,18 @@ function renderAsistencia(){
 
       html += '<div style="'+borderStyle+'">';
 
-      // Header coordinador — clickeable para colapsar
+      // Header coordinador -- clickeable para colapsar
       html += '<div onclick="toggleCoord(''+uid+'')" style="cursor:pointer;background:var(--gray-50);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--gray-200);user-select:none">';
       html += '<div>';
       html += '<div style="font-weight:700;font-size:13px">'+coord+'</div>';
       html += '<div style="font-size:11px;color:var(--gray-500);margin-top:2px">';
-      html += asesores.length+' asesores · ';
-      html += '<span style="color:var(--green)">'+cL+' ✓</span> · ';
-      html += '<span style="color:#DC2626">'+cA+' ✗</span>';
+      html += asesores.length+' asesores - ';
+      html += '<span style="color:var(--green)">'+cL+' &#10003;</span> - ';
+      html += '<span style="color:#DC2626">'+cA+' &#10007;</span>';
       html += '</div></div>';
       html += '<div style="display:flex;align-items:center;gap:8px">';
       html += '<span class="asist-pct '+pctClass(parseFloat(cPct))+'">'+cPct+'%</span>';
-      html += '<span id="arrow_'+uid+'" style="color:var(--gray-400);font-size:12px;transition:transform 0.2s">▼</span>';
+      html += '<span id="arrow_'+uid+'" style="color:var(--gray-400);font-size:12px;transition:transform 0.2s">&#9660;</span>';
       html += '</div></div>';
 
       // Tabla colapsable
@@ -1143,7 +1150,7 @@ function renderAsistencia(){
       html += '</div>'; // coord cell
     });
 
-    // Si hay número impar de coords, agregar celda vacía
+    // Si hay numero impar de coords, agregar celda vacia
     if(coordList.length%2!==0){
       html += '<div style="border-left:1px solid var(--gray-200)"></div>';
     }
@@ -1170,9 +1177,9 @@ window.toggleCoord = function(uid){
   if(arrow) arrow.style.transform = open?'':'rotate(180deg)';
 };
 
-// ══════════════════════════════════════
+// ======================================
 // INIT
-// ══════════════════════════════════════
+// ======================================
 setInterval(()=>loadData(), REFRESH_MS);
 window.addEventListener('DOMContentLoaded', loadData);
 </script>
