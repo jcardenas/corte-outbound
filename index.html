@@ -515,43 +515,26 @@ function detectCols(headers){
 // ══════════════════════════════════════
 // FETCH WITH PROXY
 // ══════════════════════════════════════
-async function fetchWithTimeout(url, ms=3000){
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), ms);
-  try {
-    const r = await fetch(url, {cache:'no-store', signal:controller.signal});
-    clearTimeout(timer);
-    return r;
-  } catch(e) {
-    clearTimeout(timer);
-    throw e;
-  }
-}
-
 async function fetchCSV(url){
-  // Intentar todos los proxies en PARALELO — usar el primero que responda
   const proxies=[
     u=>'https://corsproxy.io/?'+encodeURIComponent(u),
     u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u),
     u=>'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(u),
   ];
-
-  // Race paralelo: el primero que responda gana
-  const attempts = proxies.map(async p => {
-    const r = await fetchWithTimeout(p(url), 4000);
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    const t = await r.text();
-    if(!t || t.length < 50 || t.startsWith('<!') || t.startsWith('<html')) throw new Error('invalid response');
-    console.log('proxy ok:', p(url).substring(0,40));
-    return t;
-  });
-
-  try {
-    // Promise.any: resuelve con el primero que tenga éxito
-    return await Promise.any(attempts);
-  } catch(e) {
-    throw new Error('No se pudo conectar con Google Sheets. Verifica que la hoja esté publicada públicamente.');
+  let lastErr;
+  for(const p of proxies){
+    try{
+      const r=await fetch(p(url),{cache:'no-store'});
+      if(r.ok){
+        const t=await r.text();
+        if(t&&t.length>50&&!t.startsWith('<!')&&!t.startsWith('<html')){
+          console.log('proxy ok:', p(url).substring(0,50));
+          return t;
+        }
+      }
+    }catch(e){lastErr=e;console.warn('proxy failed:',e.message);}
   }
+  throw lastErr||new Error('No se pudo conectar con Google Sheets. Verifica que la hoja esté publicada públicamente.');
 }
 
 // ══════════════════════════════════════
