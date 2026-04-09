@@ -523,25 +523,13 @@ function detectCols(headers){
 // FETCH WITH PROXY
 // ======================================
 async function fetchCSV(url){
-  const proxies=[
-    u=>'https://corsproxy.io/?'+encodeURIComponent(u),
-    u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u),
-    u=>'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(u),
-  ];
-  let lastErr;
-  for(const p of proxies){
-    try{
-      const r=await fetch(p(url),{cache:'no-store'});
-      if(r.ok){
-        const t=await r.text();
-        if(t&&t.length>50&&!t.startsWith('<!')&&!t.startsWith('<html')){
-          console.log('proxy ok:', p(url).substring(0,50));
-          return t;
-        }
-      }
-    }catch(e){lastErr=e;console.warn('proxy failed:',e.message);}
-  }
-  throw lastErr||new Error('No se pudo conectar con Google Sheets. Verifica que la hoja este publicada publicamente.');
+  var proxyUrl = 'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(url);
+  var r = await fetch(proxyUrl, {cache:'no-store'});
+  if(!r.ok) throw new Error('Error HTTP: '+r.status);
+  var t = await r.text();
+  if(!t || t.length < 10) throw new Error('Respuesta vacia del proxy');
+  console.log('codetabs OK chars:', t.length);
+  return t;
 }
 
 // ======================================
