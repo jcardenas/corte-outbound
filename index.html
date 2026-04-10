@@ -1148,19 +1148,21 @@ function renderAsistencia(){
 
   document.getElementById('asistencia-content').innerHTML=html;
 
-  // Event delegation para toggles -- evita inline onclick con comillas
-  document.getElementById('asistencia-content').addEventListener('click', function(e){
-    var header=e.target.closest('.coord-toggle-header');
-    if(!header) return;
-    var uid=header.getAttribute('data-uid');
-    var el=document.getElementById(uid);
-    var arrow=document.getElementById('arrow_'+uid);
-    if(!el) return;
-    var isOpen=el.style.display==='block';
-    el.style.display=isOpen?'none':'block';
-    if(arrow) arrow.textContent=isOpen?'v':'^';
-  });
+  // Event delegation handled at document level (see INIT section)
 }
+
+// Toggle coordinador - event delegation a nivel documento
+document.addEventListener('click', function(e){
+  var header=e.target.closest('.coord-toggle-header');
+  if(!header) return;
+  var uid=header.getAttribute('data-uid');
+  var el=document.getElementById(uid);
+  var arrow=document.getElementById('arrow_'+uid);
+  if(!el) return;
+  var isOpen=el.style.display==='block';
+  el.style.display=isOpen?'none':'block';
+  if(arrow) arrow.textContent=isOpen?'v':'^';
+});
 
 // ======================================
 // INIT
