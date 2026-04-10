@@ -1161,6 +1161,12 @@ function renderAsistencia(){
     if(arrow) arrow.textContent=isOpen?'v':'^';
   });
 }
+
+// ======================================
+// INIT
+// ======================================
+setInterval(function(){ loadData(); }, REFRESH_MS);
+window.addEventListener('DOMContentLoaded', function(){ loadData(); });
 </script>
 </body>
 </html>
