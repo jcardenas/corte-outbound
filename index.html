@@ -324,6 +324,7 @@ tbody td{padding:10px 14px;color:var(--gray-800);}
   <button class="tab-btn" onclick="showTab('coordinador')">👤 Por Coordinador</button>
   <button class="tab-btn" onclick="showTab('asesor')">🏆 Por Asesor</button>
   <button class="tab-btn" onclick="showTab('asistencia')">👥 Asistencia</button>
+  <button class="tab-btn" onclick="showTab('especialista')">📋 Corte Especialista</button>
 </nav>
 <!-- DATE FILTER BAR -->
 <div class="date-bar" id="dateBar">
@@ -351,6 +352,8 @@ tbody td{padding:10px 14px;color:var(--gray-800);}
 <div class="page active" id="page-general"><div id="general-content"><div class="loading-screen"><div class="spinner"></div><div class="loading-text">Cargando datos...</div></div></div></div>
 <div class="page" id="page-coordinador"><div id="coord-content"><div class="loading-screen"><div class="spinner"></div><div class="loading-text">Cargando...</div></div></div></div>
 <div class="page" id="page-asesor"><div id="asesor-content"><div class="loading-screen"><div class="spinner"></div><div class="loading-text">Cargando...</div></div></div></div>
+
+<div class="page" id="page-especialista"><div id="especialista-content"><div class="loading-screen"><div class="spinner"></div><div class="loading-text">Cargando...</div></div></div></div>
 
 <div class="page" id="page-asistencia">
   <div id="asistencia-content">
@@ -695,7 +698,7 @@ function showError(msg){
   ['general-content','coord-content','asesor-content'].forEach(id=>document.getElementById(id).innerHTML=html);
 }
 function showTab(tab){
-  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',['general','coordinador','asesor','asistencia'][i]===tab));
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',['general','coordinador','asesor','asistencia','especialista'][i]===tab));
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+tab).classList.add('active');
 }
@@ -705,7 +708,7 @@ function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];
 // ======================================
 // RENDER ALL
 // ======================================
-function renderAll(){ renderGeneral(); renderCoordinador(); renderAsesor(); renderAsistencia(); }
+function renderAll(){ renderGeneral(); renderCoordinador(); renderAsesor(); renderAsistencia(); renderEspecialista(); }
 
 // -- GENERAL --
 function renderGeneral(){
@@ -1210,6 +1213,138 @@ document.addEventListener('click', function(e){
   el.style.display=isOpen?'none':'block';
   if(arrow) arrow.textContent=isOpen?'v':'^';
 });
+
+// ======================================
+// RENDER: CORTE ESPECIALISTA
+// ======================================
+function renderEspecialista(){
+  var ds = dataset;
+  var total = ds.length;
+
+  var {from:df, to:dt} = getDateRange();
+  var rangeLabel = df===dt ? df : df+' -> '+dt;
+
+  // Para cada producto: contar DIG/NVA/REC x contrato (DIGITAL / GRABADO)
+  var rows = PRODUCTOS.map(function(p){
+    var ventas = ds.filter(function(r){ return r.producto === p; });
+    var dig = ventas.filter(function(r){ return r.estadoGroup === 'D'; });
+    var rec = ventas.filter(function(r){ return r.estadoGroup === 'R'; });
+    var nva = ventas.filter(function(r){ return r.estadoGroup === 'N'; });
+
+    function contrato(arr, tipo){
+      return arr.filter(function(r){ return r.contrato === tipo; }).length;
+    }
+
+    return {
+      producto: p,
+      total: ventas.length,
+      dig: { total: dig.length, digital: contrato(dig,'CONTRATO DIGITAL'), grabado: contrato(dig,'CONTRATO GRABADO') },
+      rec: { total: rec.length, digital: contrato(rec,'CONTRATO DIGITAL'), grabado: contrato(rec,'CONTRATO GRABADO') },
+      nva: { total: nva.length, digital: contrato(nva,'CONTRATO DIGITAL'), grabado: contrato(nva,'CONTRATO GRABADO') },
+    };
+  });
+
+  // Totales generales
+  var totDig = { total:0, digital:0, grabado:0 };
+  var totRec = { total:0, digital:0, grabado:0 };
+  var totNva = { total:0, digital:0, grabado:0 };
+  rows.forEach(function(r){
+    totDig.total+=r.dig.total; totDig.digital+=r.dig.digital; totDig.grabado+=r.dig.grabado;
+    totRec.total+=r.rec.total; totRec.digital+=r.rec.digital; totRec.grabado+=r.rec.grabado;
+    totNva.total+=r.nva.total; totNva.digital+=r.nva.digital; totNva.grabado+=r.nva.grabado;
+  });
+
+  function cell(val, color){
+    if(!val) return '<span style="color:var(--gray-300)">--</span>';
+    return '<span style="font-family:Barlow Condensed,sans-serif;font-weight:800;font-size:15px;color:'+color+'">'+val+'</span>';
+  }
+  function subCell(val){
+    if(!val) return '<span style="color:var(--gray-300)">--</span>';
+    return '<span style="font-size:11px;color:var(--gray-600)">'+val+'</span>';
+  }
+
+  var html = '';
+  html += '<div class="section-title">CORTE ESPECIALISTA <span class="badge">'+rangeLabel+'</span></div>';
+
+  // KPIs resumen
+  html += '<div class="kpi-grid g4" style="margin-bottom:24px">';
+  html += '<div class="kpi-card red"><div class="kpi-label">TOTAL VENTAS</div><div class="kpi-value">'+total+'</div><div class="kpi-sub">Todos los productos</div></div>';
+  html += '<div class="kpi-card blue"><div class="kpi-label">DIGITADO</div><div class="kpi-value" style="color:var(--blue)">'+totDig.total+'</div><div class="kpi-sub">Digital: '+totDig.digital+' | Grabado: '+totDig.grabado+'</div></div>';
+  html += '<div class="kpi-card red"><div class="kpi-label">RECHAZOS</div><div class="kpi-value" style="color:#DC2626">'+totRec.total+'</div><div class="kpi-sub">Digital: '+totRec.digital+' | Grabado: '+totRec.grabado+'</div></div>';
+  html += '<div class="kpi-card green"><div class="kpi-label">NUEVA</div><div class="kpi-value" style="color:var(--green)">'+totNva.total+'</div><div class="kpi-sub">Digital: '+totNva.digital+' | Grabado: '+totNva.grabado+'</div></div>';
+  html += '</div>';
+
+  // Tabla principal
+  html += '<div class="table-card">';
+  html += '<div class="table-card-header">';
+  html += '<div class="table-card-title">DESGLOSE POR PRODUCTO Y TIPO DE CONTRATO</div>';
+  html += '<div style="font-size:12px;color:var(--gray-500)">Digital = Contrato Digital | Grab = Contrato Grabado</div>';
+  html += '</div>';
+  html += '<table style="font-size:13px">';
+  html += '<thead>';
+  html += '<tr>';
+  html += '<th rowspan="2" style="min-width:180px">PRODUCTO</th>';
+  html += '<th colspan="3" class="tc" style="background:#EFF6FF;color:var(--blue);border-left:2px solid var(--blue)">DIGITADO</th>';
+  html += '<th colspan="3" class="tc" style="background:#FEE2E2;color:#DC2626;border-left:2px solid #DC2626">RECHAZO</th>';
+  html += '<th colspan="3" class="tc" style="background:var(--green-light);color:var(--green);border-left:2px solid var(--green)">NUEVA</th>';
+  html += '<th rowspan="2" class="tc" style="background:var(--gray-50)">TOTAL</th>';
+  html += '</tr>';
+  html += '<tr>';
+  // DIG sub
+  html += '<th class="tc" style="background:#EFF6FF;color:var(--blue);border-left:2px solid var(--blue);font-size:10px">TOTAL</th>';
+  html += '<th class="tc" style="background:#EFF6FF;color:var(--blue);font-size:10px">DIGITAL</th>';
+  html += '<th class="tc" style="background:#EFF6FF;color:var(--blue);font-size:10px">GRAB.</th>';
+  // REC sub
+  html += '<th class="tc" style="background:#FEE2E2;color:#DC2626;border-left:2px solid #DC2626;font-size:10px">TOTAL</th>';
+  html += '<th class="tc" style="background:#FEE2E2;color:#DC2626;font-size:10px">DIGITAL</th>';
+  html += '<th class="tc" style="background:#FEE2E2;color:#DC2626;font-size:10px">GRAB.</th>';
+  // NVA sub
+  html += '<th class="tc" style="background:var(--green-light);color:var(--green);border-left:2px solid var(--green);font-size:10px">TOTAL</th>';
+  html += '<th class="tc" style="background:var(--green-light);color:var(--green);font-size:10px">DIGITAL</th>';
+  html += '<th class="tc" style="background:var(--green-light);color:var(--green);font-size:10px">GRAB.</th>';
+  html += '</tr>';
+  html += '</thead><tbody>';
+
+  rows.forEach(function(r){
+    var pctColor = r.producto.includes('PORT') ? 'var(--red)' : r.producto.includes('MIGRA') ? 'var(--blue)' : 'var(--green)';
+    var pctBg   = r.producto.includes('PORT') ? '#FFF0F2' : r.producto.includes('MIGRA') ? '#EFF6FF' : '#F0FDF4';
+    html += '<tr style="'+(r.total===0?'opacity:0.4':'')+'">'; 
+    html += '<td style="font-weight:700;background:'+pctBg+';color:'+pctColor+';padding-left:16px">'+r.producto+'</td>';
+    // DIG
+    html += '<td class="tc" style="border-left:2px solid #BFDBFE">'+cell(r.dig.total,'var(--blue)')+'</td>';
+    html += '<td class="tc">'+subCell(r.dig.digital)+'</td>';
+    html += '<td class="tc">'+subCell(r.dig.grabado)+'</td>';
+    // REC
+    html += '<td class="tc" style="border-left:2px solid #FECACA">'+cell(r.rec.total,'#DC2626')+'</td>';
+    html += '<td class="tc">'+subCell(r.rec.digital)+'</td>';
+    html += '<td class="tc">'+subCell(r.rec.grabado)+'</td>';
+    // NVA
+    html += '<td class="tc" style="border-left:2px solid #BBF7D0">'+cell(r.nva.total,'var(--green)')+'</td>';
+    html += '<td class="tc">'+subCell(r.nva.digital)+'</td>';
+    html += '<td class="tc">'+subCell(r.nva.grabado)+'</td>';
+    // TOTAL
+    html += '<td class="tc tb">'+r.total+'</td>';
+    html += '</tr>';
+  });
+
+  // Fila total
+  html += '<tr style="background:var(--gray-50);border-top:2px solid var(--gray-300);font-weight:800">';
+  html += '<td style="color:var(--red);padding-left:16px">TOTAL</td>';
+  html += '<td class="tc tb" style="color:var(--blue);border-left:2px solid #BFDBFE">'+totDig.total+'</td>';
+  html += '<td class="tc" style="font-size:11px;color:var(--blue)">'+totDig.digital+'</td>';
+  html += '<td class="tc" style="font-size:11px;color:var(--blue)">'+totDig.grabado+'</td>';
+  html += '<td class="tc tb" style="color:#DC2626;border-left:2px solid #FECACA">'+totRec.total+'</td>';
+  html += '<td class="tc" style="font-size:11px;color:#DC2626">'+totRec.digital+'</td>';
+  html += '<td class="tc" style="font-size:11px;color:#DC2626">'+totRec.grabado+'</td>';
+  html += '<td class="tc tb" style="color:var(--green);border-left:2px solid #BBF7D0">'+totNva.total+'</td>';
+  html += '<td class="tc" style="font-size:11px;color:var(--green)">'+totNva.digital+'</td>';
+  html += '<td class="tc" style="font-size:11px;color:var(--green)">'+totNva.grabado+'</td>';
+  html += '<td class="tc tb">'+(totDig.total+totRec.total+totNva.total)+'</td>';
+  html += '</tr>';
+  html += '</tbody></table></div>';
+
+  document.getElementById('especialista-content').innerHTML = html;
+}
 
 // ======================================
 // INIT
