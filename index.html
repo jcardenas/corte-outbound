@@ -1224,7 +1224,9 @@ function renderEspecialista(){
   var df = getDateRange().from, dt = getDateRange().to;
   var rangeLabel = df===dt ? df : df+' -> '+dt;
 
-  var rows = PRODUCTOS.map(function(p){
+  // Orden específico para la tabla
+  var PRODS_ORDEN = ['MIGRACION','MIGRACION POWER','PORTABILIDAD','PORTABILIDAD POWER','LINEA NUEVA','LINEA NUEVA POWER'];
+  var rows = PRODS_ORDEN.map(function(p){
     var ventas = ds.filter(function(r){ return r.producto === p; });
     var dig = ventas.filter(function(r){ return r.estadoGroup === 'D'; });
     var rec = ventas.filter(function(r){ return r.estadoGroup === 'R'; });
