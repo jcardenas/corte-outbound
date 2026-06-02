@@ -1607,7 +1607,7 @@ async function loadR5Background(){
   try{
     await Promise.race([
       loadR5(),
-      new Promise(function(_,rej){ setTimeout(function(){ rej(new Error('timeout r5')); }, 20000); })
+      new Promise(function(_,rej){ setTimeout(function(){ rej(new Error('timeout r5')); }, 25000); })
     ]);
     renderR5();
     badge.textContent = '&#10003; R5 listo';
@@ -1634,12 +1634,13 @@ async function loadR5(){
     var tipoVenta = (r[8]||'').toString().trim().toUpperCase();
     var power     = (r[4]||'').toString().trim();
     var fecha     = (r[1]||'').toString().trim().substring(0,10);
-    var mes       = (r[3]||'').toString().trim();
+    var mes       = (r[3]||'').toString().trim(); // "Enero","Febrero"... sin toUpperCase
+    var contador  = parseInt(r[6]||0) || 0;       // columna G = CONTADOR (unidades)
     // Filtros
     if(!CAMPANAS_R5.includes(campana)){ skipped++; return; }
     if(!TIPOS_R5.includes(tipoVenta)){ skipped++; return; }
     if(power !== 'NoPower'){ skipped++; return; }
-    r5Data.push({ fecha: fecha, campana: campana, tipoVenta: tipoVenta, power: power, mes: mes });
+    r5Data.push({ fecha: fecha, campana: campana, tipoVenta: tipoVenta, power: power, mes: mes, contador: contador });
   });
   console.log('R5 loaded:', r5Data.length, '| skipped:', skipped);
 }
@@ -1653,36 +1654,39 @@ function renderR5(){
 
   // Filter by date range
   var filtered = r5Data.filter(function(r){ return r.fecha >= df && r.fecha <= dt; });
-  var total    = r5Data.length; // total del mes completo (sin filtro de fecha para comparativa)
-  var totalFiltrado = filtered.length;
 
-  // Count by type for filtered period
-  function countType(arr, tipo){
-    return arr.filter(function(r){ return r.tipoVenta === tipo; }).length;
+  // Sumar CONTADOR (no contar filas) — igual que el filtro de Excel
+  function sumContador(arr, tipo){
+    return arr.filter(function(r){ return !tipo || r.tipoVenta === tipo; })
+              .reduce(function(s,r){ return s + (r.contador||0); }, 0);
   }
-  var mig  = countType(filtered, 'MIGRACION');
-  var port = countType(filtered, 'PORTABILIDAD');
-  var ln   = countType(filtered, 'LINEA NUEVA');
 
-  // Count by type — full dataset (mes)
-  var migTotal  = countType(r5Data, 'MIGRACION');
-  var portTotal = countType(r5Data, 'PORTABILIDAD');
-  var lnTotal   = countType(r5Data, 'LINEA NUEVA');
+  var totalFiltrado = sumContador(filtered);
+  var total         = sumContador(r5Data); // total acumulado en R5
+
+  var mig  = sumContador(filtered, 'MIGRACION');
+  var port = sumContador(filtered, 'PORTABILIDAD');
+  var ln   = sumContador(filtered, 'LINEA NUEVA');
+
+  var migTotal  = sumContador(r5Data, 'MIGRACION');
+  var portTotal = sumContador(r5Data, 'PORTABILIDAD');
+  var lnTotal   = sumContador(r5Data, 'LINEA NUEVA');
 
   // By campaign
   function countCamp(arr, camp){
     return arr.filter(function(r){ return r.campana === camp; }).length;
   }
 
-  // Monthly breakdown by mes
+  // Monthly breakdown by mes — sumar CONTADOR
   var byMes = {};
   r5Data.forEach(function(r){
     var k = r.mes || 'Sin mes';
     if(!byMes[k]) byMes[k] = {mig:0,port:0,ln:0,total:0};
-    if(r.tipoVenta==='MIGRACION') byMes[k].mig++;
-    else if(r.tipoVenta==='PORTABILIDAD') byMes[k].port++;
-    else if(r.tipoVenta==='LINEA NUEVA') byMes[k].ln++;
-    byMes[k].total++;
+    var c = r.contador || 0;
+    if(r.tipoVenta==='MIGRACION') byMes[k].mig+=c;
+    else if(r.tipoVenta==='PORTABILIDAD') byMes[k].port+=c;
+    else if(r.tipoVenta==='LINEA NUEVA') byMes[k].ln+=c;
+    byMes[k].total+=c;
   });
 
   // Dataset del período seleccionado para cruce con digitación
@@ -1720,10 +1724,10 @@ function renderR5(){
     html += '<div class="section-title">EFECTIVIDAD — ACTIVAS vs DIGITADAS <span style="font-size:12px;font-weight:400;color:var(--gray-500)">(período: '+rangeLabel+')</span></div>';
     html += '<div class="table-card" style="margin-bottom:24px">';
     html += '<div class="table-card-header"><div class="table-card-title">Comparativo Digitación vs Activación</div>';
-    html += '<div style="font-size:11px;color:var(--gray-500)">Activas = R5 NoPower | Digitadas = Dashboard Outbound</div></div>';
+    html += '<div style="font-size:11px;color:var(--gray-500)">Activaciones = suma col. CONTADOR R5 | Digitadas = Dashboard Outbound</div></div>';
     html += '<table><thead><tr>';
     html += '<th style="min-width:150px">PRODUCTO</th>';
-    html += '<th class="tc" style="color:#16A34A">ACTIVAS (R5)</th>';
+    html += '<th class="tc" style="color:#16A34A">ACTIVACIONES (R5)</th>';
     html += '<th class="tc" style="color:var(--blue)">DIGITADAS</th>';
     html += '<th class="tc">EFECTIVIDAD</th>';
     html += '</tr></thead><tbody>';
