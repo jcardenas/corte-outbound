@@ -325,6 +325,8 @@ tbody td{padding:10px 14px;color:var(--gray-800);}
   <button class="tab-btn" onclick="showTab('asesor')">🏆 Por Asesor</button>
   <button class="tab-btn" onclick="showTab('asistencia')">👥 Asistencia</button>
   <button class="tab-btn" onclick="showTab('especialista')">📋 Corte Especialista</button>
+  <button class="tab-btn" onclick="showTab('contrato')">📄 Contrato Digital</button>
+  <button class="tab-btn" onclick="showTab('r5')">✅ R5 Activas</button>
 </nav>
 <!-- DATE FILTER BAR -->
 <div class="date-bar" id="dateBar">
@@ -352,6 +354,10 @@ tbody td{padding:10px 14px;color:var(--gray-800);}
 <div class="page active" id="page-general"><div id="general-content"><div class="loading-screen"><div class="spinner"></div><div class="loading-text">Cargando datos...</div></div></div></div>
 <div class="page" id="page-coordinador"><div id="coord-content"><div class="loading-screen"><div class="spinner"></div><div class="loading-text">Cargando...</div></div></div></div>
 <div class="page" id="page-asesor"><div id="asesor-content"><div class="loading-screen"><div class="spinner"></div><div class="loading-text">Cargando...</div></div></div></div>
+
+<div class="page" id="page-r5"><div id="r5-content"><div class="loading-screen"><div class="spinner"></div><div class="loading-text">Cargando R5...</div></div></div></div>
+
+<div class="page" id="page-contrato"><div id="contrato-content"><div class="loading-screen"><div class="spinner"></div><div class="loading-text">Cargando...</div></div></div></div>
 
 <div class="page" id="page-especialista"><div id="especialista-content"><div class="loading-screen"><div class="spinner"></div><div class="loading-text">Cargando...</div></div></div></div>
 
@@ -446,8 +452,10 @@ const CAMPANAS  = ['PORTABILIDAD','MIGRACION BK'];
 
 // -- LOGUEO CONFIG --
 const LOGUEO_BASE = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQC8FF6uFabgehEof4-3Yfp9ovoskG63y9rAoT1ceeqKdUguUEXdChXFax2EOsvcwaxz0uA0uuo_jQU/pub?output=csv';
+const R5_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT64ccqymt_lz9jwpSUHn4CR4wFOlNszfxye44lXs9mbvHoUGqutnkXRLMmQ8-TT2kXHNTpa0LpyAXb/pub?output=csv&gid=2052693836';
 const LOGUEO_GIDS = {mitrol:'0', neotel:'2064793763', wolkvox:'2137155214'};
 let logueoData = {}; // {cedula: {app, fecha, primerIngreso, ultimaSalida, tiempoTotal}}
+let r5Data    = []; // [{fecha, campana, tipoVenta, power, mes}]
 const PRODUCTOS = ['MIGRACION','MIGRACION POWER','LINEA NUEVA','LINEA NUEVA POWER','PORTABILIDAD','PORTABILIDAD POWER'];
 const EST_DIGITADO = ['EN LEGALIZACION NUEVO','EN PROCESO DE ACTIVACION','LEGALIZACION GRABACION','PENDIENTE ENTREGA SIM'];
 const EST_RECHAZO  = ['ALARMA POR PROCESO INCORRECTO','ALERTA FRAUDE PQRS','ANULADO','RECHAZO DIGITACION'];
@@ -579,6 +587,7 @@ async function loadData(){
     // -- PASO 4: Logueo en segundo plano --
     btn.classList.remove('loading'); btn.textContent=' Actualizar';
     loadLogueoBackground();
+    loadR5Background();
 
   }catch(e){
     setSyncStatus('error');
@@ -698,7 +707,7 @@ function showError(msg){
   ['general-content','coord-content','asesor-content'].forEach(id=>document.getElementById(id).innerHTML=html);
 }
 function showTab(tab){
-  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',['general','coordinador','asesor','asistencia','especialista'][i]===tab));
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',['general','coordinador','asesor','asistencia','especialista','contrato','r5'][i]===tab));
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+tab).classList.add('active');
 }
@@ -708,7 +717,7 @@ function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];
 // ======================================
 // RENDER ALL
 // ======================================
-function renderAll(){ renderGeneral(); renderCoordinador(); renderAsesor(); renderAsistencia(); renderEspecialista(); }
+function renderAll(){ renderGeneral(); renderCoordinador(); renderAsesor(); renderAsistencia(); renderEspecialista(); renderContrato(); renderR5(); }
 
 // -- GENERAL --
 function renderGeneral(){
@@ -722,8 +731,60 @@ function renderGeneral(){
 
   const {from:df,to:dt}=getDateRange();
   const rangeLabel = df===dt ? df : df+' -> '+dt;
+
+  // R5 activas para el período
+  const r5Period = r5Data.filter(function(r){ return r.fecha >= df && r.fecha <= dt; });
+  const r5Total  = r5Period.length;
+  const r5Mig    = r5Period.filter(function(r){ return r.tipoVenta==='MIGRACION'; }).length;
+  const r5Port   = r5Period.filter(function(r){ return r.tipoVenta==='PORTABILIDAD'; }).length;
+  const r5LN     = r5Period.filter(function(r){ return r.tipoVenta==='LINEA NUEVA'; }).length;
+  const r5Loaded = r5Data.length > 0;
+
+  // Efectividad global
+  const efGlobal = (total && r5Total) ? (r5Total/total*100).toFixed(1) : null;
+  const efMig    = (byProd['MIGRACION']||byProd['MIGRACION POWER']) ? (r5Mig / ((byProd['MIGRACION']||0)+(byProd['MIGRACION POWER']||0)) * 100).toFixed(1) : null;
+  const efPort   = (byProd['PORTABILIDAD']||byProd['PORTABILIDAD POWER']) ? (r5Port / ((byProd['PORTABILIDAD']||0)+(byProd['PORTABILIDAD POWER']||0)) * 100).toFixed(1) : null;
+  const efLN     = (byProd['LINEA NUEVA']||byProd['LINEA NUEVA POWER']) ? (r5LN / ((byProd['LINEA NUEVA']||0)+(byProd['LINEA NUEVA POWER']||0)) * 100).toFixed(1) : null;
+
   document.getElementById('general-content').innerHTML=`
   <div class="section-title">RESUMEN -- ${rangeLabel} <span class="badge">LIVE</span></div>
+
+  <!-- BARRA R5 ACTIVAS -->
+  ${r5Loaded ? `
+  <div style="background:var(--gray-800);border-radius:12px;padding:14px 24px;display:flex;gap:0;align-items:stretch;margin-bottom:20px;flex-wrap:wrap;overflow:hidden">
+    <div style="display:flex;align-items:center;gap:10px;padding-right:24px;margin-right:24px;border-right:1px solid rgba(255,255,255,0.15)">
+      <div style="background:rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;font-size:10px;font-weight:700;color:rgba(255,255,255,0.7);letter-spacing:0.8px;text-transform:uppercase">R5<br>ACTIVAS</div>
+      <div>
+        <div style="font-family:Barlow Condensed,sans-serif;font-weight:900;font-size:36px;color:white;line-height:1">${r5Total}</div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.5);margin-top:2px">${efGlobal ? efGlobal+'% efectiv.' : 'Sin digitación'}</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:20px;align-items:center;flex:1;flex-wrap:wrap">
+      <div style="text-align:center;padding:0 16px;border-right:1px solid rgba(255,255,255,0.1)">
+        <div style="font-family:Barlow Condensed,sans-serif;font-weight:900;font-size:28px;color:#60A5FA;line-height:1">${r5Mig}</div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.6);margin-top:3px;text-transform:uppercase;letter-spacing:0.5px">Migración</div>
+        ${efMig ? `<div style="font-size:11px;font-weight:700;color:${parseFloat(efMig)>=70?'#86EFAC':parseFloat(efMig)>=50?'#FCD34D':'#FCA5A5'}">${efMig}%</div>` : ''}
+      </div>
+      <div style="text-align:center;padding:0 16px;border-right:1px solid rgba(255,255,255,0.1)">
+        <div style="font-family:Barlow Condensed,sans-serif;font-weight:900;font-size:28px;color:#FCA5A5;line-height:1">${r5Port}</div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.6);margin-top:3px;text-transform:uppercase;letter-spacing:0.5px">Portabilidad</div>
+        ${efPort ? `<div style="font-size:11px;font-weight:700;color:${parseFloat(efPort)>=70?'#86EFAC':parseFloat(efPort)>=50?'#FCD34D':'#FCA5A5'}">${efPort}%</div>` : ''}
+      </div>
+      <div style="text-align:center;padding:0 16px">
+        <div style="font-family:Barlow Condensed,sans-serif;font-weight:900;font-size:28px;color:#86EFAC;line-height:1">${r5LN}</div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.6);margin-top:3px;text-transform:uppercase;letter-spacing:0.5px">Línea Nueva</div>
+        ${efLN ? `<div style="font-size:11px;font-weight:700;color:${parseFloat(efLN)>=70?'#86EFAC':parseFloat(efLN)>=50?'#FCD34D':'#FCA5A5'}">${efLN}%</div>` : ''}
+      </div>
+      <div style="margin-left:auto;text-align:right;opacity:0.5">
+        <div style="font-size:10px;color:white">Ver detalle en</div>
+        <div style="font-size:11px;color:white;font-weight:700">pestaña R5 Activas</div>
+      </div>
+    </div>
+  </div>` : `
+  <div style="background:var(--gray-100);border:1px dashed var(--gray-300);border-radius:12px;padding:12px 20px;margin-bottom:20px;display:flex;align-items:center;gap:10px;color:var(--gray-500);font-size:13px">
+    <span style="font-size:16px">&#8635;</span> Cargando R5 Activas en segundo plano...
+  </div>`}
+
   <div class="kpi-grid g6">
     ${PRODUCTOS.map(p=>`<div class="kpi-card ${p.includes('PORT')?'red':p.includes('MIGRA')?'blue':'green'}"><div class="kpi-label">${p}</div><div class="kpi-value">${byProd[p]||0}</div><div class="kpi-sub">${prdPct(p)}</div></div>`).join('')}
   </div>
@@ -1371,6 +1432,347 @@ function renderEspecialista(){
   html += '</tbody></table></div>';
 
   document.getElementById('especialista-content').innerHTML = html;
+}
+
+// ======================================
+// RENDER: CONTRATO DIGITAL
+// ======================================
+function renderContrato(){
+  var ds = dataset;
+  var df = getDateRange().from, dt = getDateRange().to;
+  var rangeLabel = df===dt ? df : df+' -> '+dt;
+
+  var PRODS_ORDEN = ['MIGRACION','MIGRACION POWER','PORTABILIDAD','PORTABILIDAD POWER','LINEA NUEVA','LINEA NUEVA POWER'];
+
+  // Grupos por campaña igual que en Por Coordinador
+  var GRUPOS = [
+    {id:'mig',  campana:'MIGRACION',    label:'MIGRACION',    color:'#2563EB', light:'#EFF6FF'},
+    {id:'port', campana:'PORTABILIDAD', label:'PORTABILIDAD', color:'#DA0027', light:'#FFF0F2'},
+    {id:'ln',   campana:'LINEA NUEVA',  label:'LINEA NUEVA',  color:'#16A34A', light:'#F0FDF4'},
+  ];
+
+  // Mapa coordinador -> campaña
+  var campanaCoord = {};
+  Object.values(coordMap).forEach(function(info){
+    if(info.coordinador && info.campana) campanaCoord[info.coordinador] = norm(info.campana);
+  });
+
+  function buildTabla(g){
+    // Filtrar ventas de coordinadores de esta campaña
+    var ventasCampana = ds.filter(function(r){
+      return campanaCoord[r.coordinador] === g.campana;
+    });
+
+    if(ventasCampana.length === 0) return '';
+
+    var totalCampana = ventasCampana.length;
+    var totalDigital = ventasCampana.filter(function(r){ return r.contrato === 'CONTRATO DIGITAL'; }).length;
+    var totalGrabado = ventasCampana.filter(function(r){ return r.contrato === 'CONTRATO GRABADO'; }).length;
+
+    // Por producto
+    var filas = PRODS_ORDEN.map(function(p){
+      var v   = ventasCampana.filter(function(r){ return r.producto === p; });
+      var dig = v.filter(function(r){ return r.contrato === 'CONTRATO DIGITAL'; }).length;
+      var gra = v.filter(function(r){ return r.contrato === 'CONTRATO GRABADO'; }).length;
+      return { producto:p, total:v.length, digital:dig, grabado:gra };
+    });
+
+    function pct(part, tot){ return tot ? (part/tot*100).toFixed(1)+'%' : '--'; }
+    function numBig(val, color){ 
+      if(!val) return '<span style="color:var(--gray-300)">--</span>';
+      return '<span style="font-family:Barlow Condensed,sans-serif;font-weight:800;font-size:16px;color:'+color+'">'+val+'</span>';
+    }
+    function pctBadge(part, tot, color){
+      if(!tot) return '<span style="color:var(--gray-300)">--</span>';
+      var p = (part/tot*100).toFixed(1);
+      return '<span style="font-size:11px;font-weight:700;color:'+color+'">'+p+'%</span>';
+    }
+
+    var hBg = g.color, hTxt = 'white', hSub = 'rgba(255,255,255,0.8)';
+
+    var html = '<div class="table-card" style="margin-bottom:28px;overflow-x:auto">';
+
+    // Header tabla
+    html += '<div class="table-card-header" style="background:'+g.light+';border-bottom:3px solid '+g.color+'">';
+    html += '<div class="table-card-title" style="color:'+g.color+';font-size:17px">CAMPANA: '+g.label+'</div>';
+    html += '<div style="font-family:Barlow Condensed,sans-serif;font-weight:900;font-size:28px;color:'+g.color+'">'+totalCampana+'</div>';
+    html += '</div>';
+
+    html += '<table style="font-size:12px">';
+    html += '<thead>';
+    // Fila 1
+    html += '<tr>';
+    html += '<th rowspan="2" style="min-width:180px;background:'+hBg+';color:'+hTxt+'">PRODUCTO</th>';
+    html += '<th rowspan="2" class="tc" style="background:'+hBg+';color:'+hTxt+'">VENTAS</th>';
+    html += '<th colspan="2" class="tc" style="background:#2563EB;color:white;border-left:3px solid white">CONTRATO DIGITAL</th>';
+    html += '<th colspan="2" class="tc" style="background:#EA580C;color:white;border-left:3px solid white">CONTRATO GRABADO</th>';
+    html += '</tr>';
+    // Fila 2
+    html += '<tr>';
+    html += '<th class="tc" style="background:#2563EB;color:white;font-size:10px;border-left:3px solid white">CANTIDAD</th>';
+    html += '<th class="tc" style="background:#2563EB;color:white;font-size:10px">% DEL PROD.</th>';
+    html += '<th class="tc" style="background:#EA580C;color:white;font-size:10px;border-left:3px solid white">CANTIDAD</th>';
+    html += '<th class="tc" style="background:#EA580C;color:white;font-size:10px">% DEL PROD.</th>';
+    html += '</tr>';
+    html += '</thead><tbody>';
+
+    filas.forEach(function(f){
+      var pColor = f.producto.includes('PORT') ? 'var(--red)' : f.producto.includes('MIGRA') ? 'var(--blue)' : 'var(--green)';
+      var pBg    = f.producto.includes('PORT') ? '#FFF0F2'   : f.producto.includes('MIGRA') ? '#EFF6FF'   : '#F0FDF4';
+      html += '<tr>';
+      html += '<td style="font-weight:700;background:'+pBg+';color:'+pColor+';padding-left:16px">'+f.producto+'</td>';
+      html += '<td class="tc tb">'+f.total+'</td>';
+      // Digital
+      html += '<td class="tc" style="border-left:2px solid #BFDBFE">'+numBig(f.digital,'#2563EB')+'</td>';
+      html += '<td class="tc">'+pctBadge(f.digital,f.total,'#2563EB')+'</td>';
+      // Grabado
+      html += '<td class="tc" style="border-left:2px solid #FED7AA">'+numBig(f.grabado,'#EA580C')+'</td>';
+      html += '<td class="tc">'+pctBadge(f.grabado,f.total,'#EA580C')+'</td>';
+      html += '</tr>';
+    });
+
+    // Fila total con % sobre total campaña
+    html += '<tr style="background:'+g.light+';border-top:3px solid '+g.color+'">';
+    html += '<td style="font-weight:800;color:'+g.color+';padding-left:16px">TOTAL CAMPANA</td>';
+    html += '<td class="tc" style="font-family:Barlow Condensed,sans-serif;font-weight:900;font-size:18px;color:'+g.color+'">'+totalCampana+'</td>';
+    // Digital total
+    html += '<td class="tc" style="border-left:2px solid #BFDBFE">';
+    html += '<span style="font-family:Barlow Condensed,sans-serif;font-weight:900;font-size:18px;color:#2563EB">'+totalDigital+'</span>';
+    html += '</td>';
+    html += '<td class="tc">';
+    html += '<span style="font-size:13px;font-weight:800;color:#2563EB;background:#DBEAFE;padding:3px 10px;border-radius:20px">'+pct(totalDigital,totalCampana)+'</span>';
+    html += '</td>';
+    // Grabado total
+    html += '<td class="tc" style="border-left:2px solid #FED7AA">';
+    html += '<span style="font-family:Barlow Condensed,sans-serif;font-weight:900;font-size:18px;color:#EA580C">'+totalGrabado+'</span>';
+    html += '</td>';
+    html += '<td class="tc">';
+    html += '<span style="font-size:13px;font-weight:800;color:#EA580C;background:#FFEDD5;padding:3px 10px;border-radius:20px">'+pct(totalGrabado,totalCampana)+'</span>';
+    html += '</td>';
+    html += '</tr>';
+
+    html += '</tbody></table></div>';
+    return html;
+  }
+
+  // KPIs globales
+  var totalAll = ds.length;
+  var digAll   = ds.filter(function(r){ return r.contrato==='CONTRATO DIGITAL'; }).length;
+  var graAll   = ds.filter(function(r){ return r.contrato==='CONTRATO GRABADO'; }).length;
+  function pct(p,t){ return t?(p/t*100).toFixed(1)+'%':'--'; }
+
+  var html = '';
+  html += '<div class="section-title">CONTRATO DIGITAL <span class="badge">'+rangeLabel+'</span></div>';
+
+  html += '<div class="kpi-grid g3" style="margin-bottom:28px">';
+  html += '<div class="kpi-card red"><div class="kpi-label">TOTAL VENTAS</div><div class="kpi-value">'+totalAll+'</div><div class="kpi-sub">Todas las campanas</div></div>';
+  html += '<div class="kpi-card blue"><div class="kpi-label">CONTRATO DIGITAL</div>';
+  html += '<div class="kpi-value" style="color:#2563EB">'+digAll+'</div>';
+  html += '<div class="kpi-sub">'+pct(digAll,totalAll)+' del total</div></div>';
+  html += '<div class="kpi-card orange"><div class="kpi-label">CONTRATO GRABADO</div>';
+  html += '<div class="kpi-value" style="color:#EA580C">'+graAll+'</div>';
+  html += '<div class="kpi-sub">'+pct(graAll,totalAll)+' del total</div></div>';
+  html += '</div>';
+
+  GRUPOS.forEach(function(g){ html += buildTabla(g); });
+
+  document.getElementById('contrato-content').innerHTML = html;
+}
+
+// ======================================
+// LOAD R5 ACTIVAS MOVIL — background
+// ======================================
+async function loadR5Background(){
+  var badge = document.createElement('span');
+  badge.id = 'r5-loading';
+  badge.style = 'font-size:11px;color:var(--gray-500);margin-left:8px';
+  badge.textContent = '&#8635; Cargando R5...';
+  document.getElementById('lastUpdate')?.appendChild(badge);
+  try{
+    await Promise.race([
+      loadR5(),
+      new Promise(function(_,rej){ setTimeout(function(){ rej(new Error('timeout r5')); }, 20000); })
+    ]);
+    renderR5();
+    badge.textContent = '&#10003; R5 listo';
+    setTimeout(function(){ badge.remove(); }, 3000);
+  }catch(e){
+    console.warn('R5 error:', e.message);
+    badge.textContent = '! R5 no disponible';
+    setTimeout(function(){ badge.remove(); }, 4000);
+    document.getElementById('r5-content').innerHTML = '<div class="error-box"><strong>Error cargando R5</strong>'+e.message+'</div>';
+  }
+}
+
+async function loadR5(){
+  r5Data = [];
+  var text = await fetchCSV(R5_URL);
+  var parsed = parseCSV(text);
+  var rows = parsed.rows;
+  // Columns: [0]=row_num [1]=ID [2]=FECHA [3]=AÑO [4]=MES [5]=POWER [6]=CFM [7]=CONTADOR [8]=CAMPAÑA_CVC [9]=TIPO_VENTA [10]=REGION
+  var CAMPANAS_R5  = ['MIGRACION','PORTABILIDAD','PORTABILIDAD 103'];
+  var TIPOS_R5     = ['MIGRACION','PORTABILIDAD','LINEA NUEVA'];
+  var skipped = 0;
+  rows.forEach(function(r){
+    var campana   = (r[8]||'').toString().trim().toUpperCase();
+    var tipoVenta = (r[9]||'').toString().trim().toUpperCase();
+    var power     = (r[5]||'').toString().trim();
+    var fecha     = (r[2]||'').toString().trim();
+    var mes       = (r[4]||'').toString().trim();
+    // Filtros
+    if(!CAMPANAS_R5.includes(campana)){ skipped++; return; }
+    if(!TIPOS_R5.includes(tipoVenta)){ skipped++; return; }
+    if(power !== 'NoPower'){ skipped++; return; }
+    r5Data.push({ fecha: fecha, campana: campana, tipoVenta: tipoVenta, power: power, mes: mes });
+  });
+  console.log('R5 loaded:', r5Data.length, '| skipped:', skipped);
+}
+
+// ======================================
+// RENDER: R5 ACTIVAS MOVIL
+// ======================================
+function renderR5(){
+  var df = getDateRange().from, dt = getDateRange().to;
+  var rangeLabel = df===dt ? df : df+' -> '+dt;
+
+  // Filter by date range
+  var filtered = r5Data.filter(function(r){ return r.fecha >= df && r.fecha <= dt; });
+  var total    = r5Data.length; // total del mes completo (sin filtro de fecha para comparativa)
+  var totalFiltrado = filtered.length;
+
+  // Count by type for filtered period
+  function countType(arr, tipo){
+    return arr.filter(function(r){ return r.tipoVenta === tipo; }).length;
+  }
+  var mig  = countType(filtered, 'MIGRACION');
+  var port = countType(filtered, 'PORTABILIDAD');
+  var ln   = countType(filtered, 'LINEA NUEVA');
+
+  // Count by type — full dataset (mes)
+  var migTotal  = countType(r5Data, 'MIGRACION');
+  var portTotal = countType(r5Data, 'PORTABILIDAD');
+  var lnTotal   = countType(r5Data, 'LINEA NUEVA');
+
+  // By campaign
+  function countCamp(arr, camp){
+    return arr.filter(function(r){ return r.campana === camp; }).length;
+  }
+
+  // Monthly breakdown by mes
+  var byMes = {};
+  r5Data.forEach(function(r){
+    var k = r.mes || 'Sin mes';
+    if(!byMes[k]) byMes[k] = {mig:0,port:0,ln:0,total:0};
+    if(r.tipoVenta==='MIGRACION') byMes[k].mig++;
+    else if(r.tipoVenta==='PORTABILIDAD') byMes[k].port++;
+    else if(r.tipoVenta==='LINEA NUEVA') byMes[k].ln++;
+    byMes[k].total++;
+  });
+
+  // Dataset del período seleccionado para cruce con digitación
+  var digitTotal = dataset.length;
+  var digitMig   = dataset.filter(function(r){ return r.producto==='MIGRACION'||r.producto==='MIGRACION POWER'; }).length;
+  var digitPort  = dataset.filter(function(r){ return r.producto==='PORTABILIDAD'||r.producto==='PORTABILIDAD POWER'; }).length;
+  var digitLN    = dataset.filter(function(r){ return r.producto==='LINEA NUEVA'||r.producto==='LINEA NUEVA POWER'; }).length;
+
+  function pct(a,b){ return b?(a/b*100).toFixed(1)+'%':'--'; }
+  function efRow(label,act,dig,color){
+    var p = b?pct(act,dig):'--'; var b=dig;
+    var pStr = b?(act/b*100).toFixed(1):'--';
+    var cls = pStr!='--'?(parseFloat(pStr)>=70?'ok':parseFloat(pStr)>=50?'warn':'bad'):'warn';
+    return '<tr><td style="font-weight:700;color:'+color+';padding-left:16px">'+label+'</td>'
+      +'<td class="tc tb" style="color:'+color+'">'+act+'</td>'
+      +'<td class="tc">'+dig+'</td>'
+      +'<td class="tc"><span class="asist-pct '+(pStr!='--'?(parseFloat(pStr)>=70?'ok':parseFloat(pStr)>=50?'warn':'bad'):'warn')+'">'+
+      (b?(act/b*100).toFixed(1)+'%':'--')+'</span></td></tr>';
+  }
+
+  var html = '';
+  html += '<div class="section-title">R5 ACTIVAS MOVIL <span class="badge">'+rangeLabel+'</span></div>';
+
+  // KPIs del período
+  html += '<div style="background:var(--gray-800);border-radius:12px;padding:16px 24px;display:flex;gap:32px;align-items:center;margin-bottom:24px;flex-wrap:wrap">';
+  html += '<div style="text-align:center"><div style="font-family:Barlow Condensed,sans-serif;font-weight:900;font-size:32px;color:white;line-height:1">'+totalFiltrado+'</div><div style="font-size:10px;color:rgba(255,255,255,0.7);text-transform:uppercase;margin-top:3px">ACTIVAS PERÍODO</div></div>';
+  html += '<div style="text-align:center"><div style="font-family:Barlow Condensed,sans-serif;font-weight:900;font-size:32px;color:#60A5FA;line-height:1">'+mig+'</div><div style="font-size:10px;color:rgba(255,255,255,0.7);text-transform:uppercase;margin-top:3px">MIGRACION</div></div>';
+  html += '<div style="text-align:center"><div style="font-family:Barlow Condensed,sans-serif;font-weight:900;font-size:32px;color:#FCA5A5;line-height:1">'+port+'</div><div style="font-size:10px;color:rgba(255,255,255,0.7);text-transform:uppercase;margin-top:3px">PORTABILIDAD</div></div>';
+  html += '<div style="text-align:center"><div style="font-family:Barlow Condensed,sans-serif;font-weight:900;font-size:32px;color:#86EFAC;line-height:1">'+ln+'</div><div style="font-size:10px;color:rgba(255,255,255,0.7);text-transform:uppercase;margin-top:3px">LINEA NUEVA</div></div>';
+  html += '<div style="margin-left:auto;text-align:center;opacity:0.6"><div style="font-size:11px;color:white">Total acumulado<br>en R5</div><div style="font-family:Barlow Condensed,sans-serif;font-weight:900;font-size:24px;color:white">'+total+'</div></div>';
+  html += '</div>';
+
+  // Efectividad: Activas vs Digitadas
+  if(dataset.length > 0){
+    html += '<div class="section-title">EFECTIVIDAD — ACTIVAS vs DIGITADAS <span style="font-size:12px;font-weight:400;color:var(--gray-500)">(período: '+rangeLabel+')</span></div>';
+    html += '<div class="table-card" style="margin-bottom:24px">';
+    html += '<div class="table-card-header"><div class="table-card-title">Comparativo Digitación vs Activación</div>';
+    html += '<div style="font-size:11px;color:var(--gray-500)">Activas = R5 NoPower | Digitadas = Dashboard Outbound</div></div>';
+    html += '<table><thead><tr>';
+    html += '<th style="min-width:150px">PRODUCTO</th>';
+    html += '<th class="tc" style="color:#16A34A">ACTIVAS (R5)</th>';
+    html += '<th class="tc" style="color:var(--blue)">DIGITADAS</th>';
+    html += '<th class="tc">EFECTIVIDAD</th>';
+    html += '</tr></thead><tbody>';
+    html += efRow('MIGRACION',      mig,  digitMig,  'var(--blue)');
+    html += efRow('PORTABILIDAD',   port, digitPort, 'var(--red)');
+    html += efRow('LINEA NUEVA',    ln,   digitLN,   'var(--green)');
+    // Total row
+    var totEf = (digitTotal>0)?((totalFiltrado/digitTotal)*100).toFixed(1):'--';
+    var totCls = totEf!='--'?(parseFloat(totEf)>=70?'ok':parseFloat(totEf)>=50?'warn':'bad'):'warn';
+    html += '<tr style="background:var(--gray-50);border-top:2px solid var(--gray-300)">';
+    html += '<td style="font-weight:800;color:var(--red);padding-left:16px">TOTAL</td>';
+    html += '<td class="tc" style="font-family:Barlow Condensed,sans-serif;font-weight:900;font-size:18px;color:#16A34A">'+totalFiltrado+'</td>';
+    html += '<td class="tc" style="font-family:Barlow Condensed,sans-serif;font-weight:900;font-size:18px;color:var(--blue)">'+digitTotal+'</td>';
+    html += '<td class="tc"><span class="asist-pct '+totCls+'">'+totEf+(totEf!='--'?'%':'')+'</span></td>';
+    html += '</tr>';
+    html += '</tbody></table></div>';
+  }
+
+  // Tabla por mes
+  var meses = Object.keys(byMes);
+  if(meses.length > 0){
+    html += '<div class="section-title">ACTIVAS POR MES — HISTÓRICO R5</div>';
+    html += '<div class="table-card"><div class="table-card-header"><div class="table-card-title">Distribución mensual de activaciones (NoPower)</div></div>';
+    html += '<table><thead><tr>';
+    html += '<th>MES</th>';
+    html += '<th class="tc" style="color:var(--blue)">MIGRACION</th>';
+    html += '<th class="tc" style="color:var(--red)">PORTABILIDAD</th>';
+    html += '<th class="tc" style="color:var(--green)">LINEA NUEVA</th>';
+    html += '<th class="tc">TOTAL</th>';
+    html += '<th>PARTICIPACION</th>';
+    html += '</tr></thead><tbody>';
+    meses.forEach(function(m){
+      var d = byMes[m];
+      var pctMes = total?(d.total/total*100).toFixed(1):0;
+      html += '<tr>';
+      html += '<td style="font-weight:600">'+m+'</td>';
+      html += '<td class="tc"><span style="font-family:Barlow Condensed,sans-serif;font-weight:800;font-size:15px;color:var(--blue)">'+d.mig+'</span></td>';
+      html += '<td class="tc"><span style="font-family:Barlow Condensed,sans-serif;font-weight:800;font-size:15px;color:var(--red)">'+d.port+'</span></td>';
+      html += '<td class="tc"><span style="font-family:Barlow Condensed,sans-serif;font-weight:800;font-size:15px;color:var(--green)">'+d.ln+'</span></td>';
+      html += '<td class="tc tb">'+d.total+'</td>';
+      html += '<td><div class="pbar-wrap"><div class="pbar-bg"><div class="pbar-fill" style="width:'+pctMes+'%"></div></div><span class="pbar-pct">'+pctMes+'%</span></div></td>';
+      html += '</tr>';
+    });
+    // Total
+    html += '<tr style="background:var(--gray-50);border-top:2px solid var(--gray-300)">';
+    html += '<td style="font-weight:800;color:var(--red)">TOTAL</td>';
+    html += '<td class="tc tb" style="color:var(--blue)">'+migTotal+'</td>';
+    html += '<td class="tc tb" style="color:var(--red)">'+portTotal+'</td>';
+    html += '<td class="tc tb" style="color:var(--green)">'+lnTotal+'</td>';
+    html += '<td class="tc tb">'+total+'</td>';
+    html += '<td><span style="font-weight:700;color:var(--red)">100%</span></td>';
+    html += '</tr>';
+    html += '</tbody></table></div>';
+  }
+
+  // Nota si no hay datos del período
+  if(totalFiltrado === 0 && r5Data.length > 0){
+    html += '<div class="error-box" style="background:#FEF3C7;border-color:#FCD34D;color:#92400E"><strong>Sin activas en el período seleccionado</strong>El R5 tiene '+total+' registros en total. Prueba seleccionando "Este Mes" o un rango más amplio.</div>';
+  }
+
+  if(r5Data.length === 0){
+    html = '<div class="loading-screen"><div class="spinner"></div><div class="loading-text">Cargando R5 Activas...</div></div>';
+  }
+
+  document.getElementById('r5-content').innerHTML = html;
 }
 
 // ======================================
