@@ -1625,16 +1625,16 @@ async function loadR5(){
   var text = await fetchCSV(R5_URL);
   var parsed = parseCSV(text);
   var rows = parsed.rows;
-  // Columns: [0]=row_num [1]=ID [2]=FECHA [3]=AÑO [4]=MES [5]=POWER [6]=CFM [7]=CONTADOR [8]=CAMPAÑA_CVC [9]=TIPO_VENTA [10]=REGION
+  // Columns: [0]=ID [1]=FECHA [2]=AÑO [3]=MES [4]=POWER [5]=CFM [6]=CONTADOR [7]=CAMPAÑA_CVC [8]=TIPO_VENTA [9]=REGION
   var CAMPANAS_R5  = ['MIGRACION','PORTABILIDAD','PORTABILIDAD 103'];
   var TIPOS_R5     = ['MIGRACION','PORTABILIDAD','LINEA NUEVA'];
   var skipped = 0;
   rows.forEach(function(r){
-    var campana   = (r[8]||'').toString().trim().toUpperCase();
-    var tipoVenta = (r[9]||'').toString().trim().toUpperCase();
-    var power     = (r[5]||'').toString().trim();
-    var fecha     = (r[2]||'').toString().trim();
-    var mes       = (r[4]||'').toString().trim();
+    var campana   = (r[7]||'').toString().trim().toUpperCase();
+    var tipoVenta = (r[8]||'').toString().trim().toUpperCase();
+    var power     = (r[4]||'').toString().trim();
+    var fecha     = (r[1]||'').toString().trim().substring(0,10);
+    var mes       = (r[3]||'').toString().trim();
     // Filtros
     if(!CAMPANAS_R5.includes(campana)){ skipped++; return; }
     if(!TIPOS_R5.includes(tipoVenta)){ skipped++; return; }
