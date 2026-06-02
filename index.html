@@ -748,12 +748,27 @@ function renderGeneral(){
   const {from:df,to:dt}=getDateRange();
   const rangeLabel = df===dt ? df : df+' -> '+dt;
 
-  // R5 activas para el período
-  const r5Period = r5Data.filter(function(r){ return r.fecha >= df && r.fecha <= dt; });
-  const r5Total  = r5Period.length;
-  const r5Mig    = r5Period.filter(function(r){ return r.tipoVenta==='MIGRACION'; }).length;
-  const r5Port   = r5Period.filter(function(r){ return r.tipoVenta==='PORTABILIDAD'; }).length;
-  const r5LN     = r5Period.filter(function(r){ return r.tipoVenta==='LINEA NUEVA'; }).length;
+  // R5 activas: usar suma de CONTADOR y filtrar igual que renderR5
+  function r5SumCont(arr, tipo){
+    return arr.filter(function(r){ return !tipo||r.tipoVenta===tipo; })
+              .reduce(function(s,r){ return s+(r.contador||0); },0);
+  }
+  var r5Period;
+  if(dateFilter.mode==='custom'){
+    r5Period = r5Data.filter(function(r){ return r.fecha>=df && r.fecha<=dt; });
+  } else if(dateFilter.mode==='mes'){
+    var _meses=[...new Set(r5Data.map(function(r){return r.mes;}).filter(Boolean))];
+    var _ORDEN=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    _meses.sort(function(a,b){return _ORDEN.indexOf(a)-_ORDEN.indexOf(b);});
+    var _ult=_meses[_meses.length-1];
+    r5Period = r5Data.filter(function(r){ return r.mes===_ult; });
+  } else {
+    r5Period = r5Data.filter(function(r){ return r.fecha>=df && r.fecha<=dt; });
+  }
+  const r5Total  = r5SumCont(r5Period);
+  const r5Mig    = r5SumCont(r5Period,'MIGRACION');
+  const r5Port   = r5SumCont(r5Period,'PORTABILIDAD');
+  const r5LN     = r5SumCont(r5Period,'LINEA NUEVA');
   const r5Loaded = r5Data.length > 0;
 
   // Efectividad global
@@ -1300,6 +1315,8 @@ function renderEspecialista(){
 
   var df = getDateRange().from, dt = getDateRange().to;
   var rangeLabel = df===dt ? df : df+' -> '+dt;
+  // For display in R5, show which period we're actually showing
+  var r5RangeLabel = rangeLabel;
 
   // Orden específico para la tabla
   var PRODS_ORDEN = ['MIGRACION','MIGRACION POWER','PORTABILIDAD','PORTABILIDAD POWER','LINEA NUEVA','LINEA NUEVA POWER'];
@@ -1457,6 +1474,8 @@ function renderContrato(){
   var ds = dataset;
   var df = getDateRange().from, dt = getDateRange().to;
   var rangeLabel = df===dt ? df : df+' -> '+dt;
+  // For display in R5, show which period we're actually showing
+  var r5RangeLabel = rangeLabel;
 
   var PRODS_ORDEN = ['MIGRACION','MIGRACION POWER','PORTABILIDAD','PORTABILIDAD POWER','LINEA NUEVA','LINEA NUEVA POWER'];
 
@@ -1651,9 +1670,26 @@ async function loadR5(){
 function renderR5(){
   var df = getDateRange().from, dt = getDateRange().to;
   var rangeLabel = df===dt ? df : df+' -> '+dt;
+  // For display in R5, show which period we're actually showing
+  var r5RangeLabel = rangeLabel;
 
-  // Filter by date range
-  var filtered = r5Data.filter(function(r){ return r.fecha >= df && r.fecha <= dt; });
+  // Filter R5: si es rango personalizado usa fechas, si no usa el campo mes del R5
+  // porque el R5 puede tener datos de meses anteriores sin importar la fecha del dashboard
+  var filtered;
+  if(dateFilter.mode === 'custom'){
+    filtered = r5Data.filter(function(r){ return r.fecha >= df && r.fecha <= dt; });
+  } else if(dateFilter.mode === 'mes'){
+    // "Este Mes" en el dashboard es junio (mes actual), pero R5 puede tener mayo
+    // Usamos el mes más reciente disponible en el R5
+    var mesesR5 = [...new Set(r5Data.map(function(r){ return r.mes; }).filter(Boolean))];
+    var ORDEN_MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    mesesR5.sort(function(a,b){ return ORDEN_MESES.indexOf(a)-ORDEN_MESES.indexOf(b); });
+    var ultimoMes = mesesR5[mesesR5.length-1];
+    filtered = r5Data.filter(function(r){ return r.mes === ultimoMes; });
+  } else {
+    // hoy / ayer: usar fecha exacta
+    filtered = r5Data.filter(function(r){ return r.fecha >= df && r.fecha <= dt; });
+  }
 
   // Sumar CONTADOR (no contar filas) — igual que el filtro de Excel
   function sumContador(arr, tipo){
@@ -1708,7 +1744,14 @@ function renderR5(){
   }
 
   var html = '';
-  html += '<div class="section-title">R5 ACTIVAS MOVIL <span class="badge">'+rangeLabel+'</span></div>';
+  // Update label after filtering so it shows what was actually used
+  if(dateFilter.mode==='mes' && filtered.length>0){
+    var mesesR5b=[...new Set(r5Data.map(function(r){return r.mes;}).filter(Boolean))];
+    var ORDEN=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    mesesR5b.sort(function(a,b){return ORDEN.indexOf(a)-ORDEN.indexOf(b);});
+    r5RangeLabel = mesesR5b[mesesR5b.length-1]+' (ultimo mes R5)';
+  }
+  html += '<div class="section-title">R5 ACTIVAS MOVIL <span class="badge">'+r5RangeLabel+'</span></div>';
 
   // KPIs del período
   html += '<div style="background:var(--gray-800);border-radius:12px;padding:16px 24px;display:flex;gap:32px;align-items:center;margin-bottom:24px;flex-wrap:wrap">';
