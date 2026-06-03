@@ -534,29 +534,13 @@ function detectCols(headers){
 // FETCH WITH PROXY
 // ======================================
 async function fetchCSV(url){
-  var proxies = [
-    'https://api.codetabs.com/v1/proxy?quest=',
-    'https://corsproxy.io/?',
-    'https://api.allorigins.win/raw?url='
-  ];
-  var lastErr = null;
-  for(var i=0; i<proxies.length; i++){
-    try{
-      var proxyUrl = proxies[i] + encodeURIComponent(url);
-      var r = await fetch(proxyUrl, {cache:'no-store'});
-      if(!r.ok) throw new Error('HTTP '+r.status);
-      var t = await r.text();
-      if(!t || t.length < 10) throw new Error('Respuesta vacia');
-      if(t.includes('Host not in allowlist')) throw new Error('Proxy blocklist');
-      if(t.startsWith('<')) throw new Error('HTML no CSV');
-      console.log('proxy['+i+'] OK chars:', t.length, url.substring(0,60));
-      return t;
-    }catch(e){
-      console.warn('proxy['+i+'] failed:', e.message);
-      lastErr = e;
-    }
-  }
-  throw new Error('Todos los proxies fallaron: ' + (lastErr?lastErr.message:''));
+  var proxyUrl = 'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(url);
+  var r = await fetch(proxyUrl, {cache:'no-store'});
+  if(!r.ok) throw new Error('Error HTTP: '+r.status);
+  var t = await r.text();
+  if(!t || t.length < 10) throw new Error('Respuesta vacia del proxy');
+  console.log('codetabs OK chars:', t.length);
+  return t;
 }
 
 // ======================================
@@ -1624,11 +1608,9 @@ async function loadR5Background(){
   badge.textContent = '&#8635; Cargando R5...';
   document.getElementById('lastUpdate')?.appendChild(badge);
   try{
-    await Promise.race([
-      loadR5(),
-      new Promise(function(_,rej){ setTimeout(function(){ rej(new Error('timeout r5')); }, 25000); })
-    ]);
+    await loadR5(); // sin timeout — espera lo que tarde
     renderR5();
+    renderGeneral(); // actualiza barra R5 en dashboard general
     badge.textContent = '&#10003; R5 listo';
     setTimeout(function(){ badge.remove(); }, 3000);
   }catch(e){
