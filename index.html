@@ -534,13 +534,28 @@ function detectCols(headers){
 // FETCH WITH PROXY
 // ======================================
 async function fetchCSV(url){
-  var proxyUrl = 'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(url);
-  var r = await fetch(proxyUrl, {cache:'no-store'});
-  if(!r.ok) throw new Error('Error HTTP: '+r.status);
-  var t = await r.text();
-  if(!t || t.length < 10) throw new Error('Respuesta vacia del proxy');
-  console.log('codetabs OK chars:', t.length);
-  return t;
+  var proxies = [
+    function(u){ return 'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(u); },
+    function(u){ return 'https://api.allorigins.win/raw?url='+encodeURIComponent(u); },
+    function(u){ return 'https://corsproxy.io/?'+encodeURIComponent(u); }
+  ];
+  for(var i=0; i<proxies.length; i++){
+    try{
+      var controller = new AbortController();
+      var tid = setTimeout(function(){ controller.abort(); }, 15000);
+      var r = await fetch(proxies[i](url), {cache:'no-store', signal:controller.signal});
+      clearTimeout(tid);
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      var t = await r.text();
+      if(!t || t.length < 10) throw new Error('Vacia');
+      if(t.includes('error') && t.length < 200) throw new Error('Error proxy: '+t.substring(0,80));
+      console.log('proxy['+i+'] OK chars:', t.length);
+      return t;
+    }catch(e){
+      console.warn('proxy['+i+'] fallo:', e.message);
+      if(i === proxies.length-1) throw new Error('Todos los proxies fallaron. Ultimo error: '+e.message);
+    }
+  }
 }
 
 // ======================================
