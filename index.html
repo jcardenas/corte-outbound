@@ -776,36 +776,36 @@ function renderGeneral(){
   <div class="section-title">RESUMEN -- ${rangeLabel} <span class="badge">LIVE</span></div>
 
     <!-- BARRA R5 ACTIVAS — filtro de mes independiente -->
-  \${r5Loaded ? \`
+  ${r5Loaded ? `
   <div style="background:var(--gray-800);border-radius:12px;padding:14px 20px;display:flex;gap:0;align-items:center;margin-bottom:20px;flex-wrap:wrap;row-gap:10px">
     <div style="display:flex;align-items:center;gap:10px;padding-right:20px;margin-right:20px;border-right:1px solid rgba(255,255,255,0.15);flex-shrink:0">
       <div style="background:rgba(255,255,255,0.1);border-radius:8px;padding:5px 10px;font-size:10px;font-weight:700;color:rgba(255,255,255,0.7);letter-spacing:0.8px;text-transform:uppercase;line-height:1.4">R5<br>ACTIVAS</div>
       <div>
-        <div style="font-family:Barlow Condensed,sans-serif;font-weight:900;font-size:36px;color:white;line-height:1">\${r5Total}</div>
-        <div style="font-size:9px;color:rgba(255,255,255,0.4);margin-top:2px">Corte: \${_ultimaFechaR5||'--'}</div>
+        <div style="font-family:Barlow Condensed,sans-serif;font-weight:900;font-size:36px;color:white;line-height:1">${r5Total}</div>
+        <div style="font-size:9px;color:rgba(255,255,255,0.4);margin-top:2px">Corte: ${_ultimaFechaR5||'--'}</div>
       </div>
     </div>
     <div style="display:flex;gap:5px;align-items:center;padding-right:20px;margin-right:20px;border-right:1px solid rgba(255,255,255,0.15);flex-shrink:0">
-      \${_mesesDisp.map(m=>\`<button onclick="window._r5MesSel='\${m}';renderGeneral();" style="border:1.5px solid \${m===_r5MesActivo?'white':'rgba(255,255,255,0.25)'};background:\${m===_r5MesActivo?'white':'transparent'};color:\${m===_r5MesActivo?'#111827':'rgba(255,255,255,0.7)'};border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:Barlow,sans-serif;transition:all 0.15s">\${m}</button>\`).join('')}
+      ${_mesesDisp.map(m=>`<button onclick="window._r5MesSel='${m}';renderGeneral();" style="border:1.5px solid ${m===_r5MesActivo?'white':'rgba(255,255,255,0.25)'};background:${m===_r5MesActivo?'white':'transparent'};color:${m===_r5MesActivo?'#111827':'rgba(255,255,255,0.7)'};border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:Barlow,sans-serif">${m}</button>`).join('')}
     </div>
     <div style="display:flex;gap:16px;align-items:center;flex:1;flex-wrap:wrap">
       <div style="text-align:center;padding:0 12px;border-right:1px solid rgba(255,255,255,0.1)">
-        <div style="font-family:Barlow Condensed,sans-serif;font-weight:900;font-size:28px;color:#60A5FA;line-height:1">\${r5Mig}</div>
-        <div style="font-size:10px;color:rgba(255,255,255,0.55);margin-top:3px;text-transform:uppercase;letter-spacing:0.4px">Migración</div>
+        <div style="font-family:Barlow Condensed,sans-serif;font-weight:900;font-size:28px;color:#60A5FA;line-height:1">${r5Mig}</div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.55);margin-top:3px;text-transform:uppercase">Migración</div>
       </div>
       <div style="text-align:center;padding:0 12px;border-right:1px solid rgba(255,255,255,0.1)">
-        <div style="font-family:Barlow Condensed,sans-serif;font-weight:900;font-size:28px;color:#FCA5A5;line-height:1">\${r5Port}</div>
-        <div style="font-size:10px;color:rgba(255,255,255,0.55);margin-top:3px;text-transform:uppercase;letter-spacing:0.4px">Portabilidad</div>
+        <div style="font-family:Barlow Condensed,sans-serif;font-weight:900;font-size:28px;color:#FCA5A5;line-height:1">${r5Port}</div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.55);margin-top:3px;text-transform:uppercase">Portabilidad</div>
       </div>
       <div style="text-align:center;padding:0 12px">
-        <div style="font-family:Barlow Condensed,sans-serif;font-weight:900;font-size:28px;color:#86EFAC;line-height:1">\${r5LN}</div>
-        <div style="font-size:10px;color:rgba(255,255,255,0.55);margin-top:3px;text-transform:uppercase;letter-spacing:0.4px">Línea Nueva</div>
+        <div style="font-family:Barlow Condensed,sans-serif;font-weight:900;font-size:28px;color:#86EFAC;line-height:1">${r5LN}</div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.55);margin-top:3px;text-transform:uppercase">Línea Nueva</div>
       </div>
     </div>
-  </div>\` : \`
+  </div>` : `
   <div style="background:var(--gray-100);border:1px dashed var(--gray-300);border-radius:12px;padding:12px 20px;margin-bottom:20px;display:flex;align-items:center;gap:10px;color:var(--gray-500);font-size:13px">
     <span style="font-size:16px">&#8635;</span> Cargando R5 Activas en segundo plano...
-  </div>\`}
+  </div>`}
 
   <div class="kpi-grid g6">
     ${PRODUCTOS.map(p=>`<div class="kpi-card ${p.includes('PORT')?'red':p.includes('MIGRA')?'blue':'green'}"><div class="kpi-label">${p}</div><div class="kpi-value">${byProd[p]||0}</div><div class="kpi-sub">${prdPct(p)}</div></div>`).join('')}
