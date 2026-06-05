@@ -1673,22 +1673,19 @@ function renderR5(){
   // For display in R5, show which period we're actually showing
   var r5RangeLabel = rangeLabel;
 
-  // Filter R5: si es rango personalizado usa fechas, si no usa el campo mes del R5
-  // porque el R5 puede tener datos de meses anteriores sin importar la fecha del dashboard
+  // R5: siempre mostrar el ultimo mes disponible en el R5
+  // El R5 es un consolidado mensual — no tiene sentido filtrar por hoy/ayer
+  var ORDEN_MESES_R5 = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  var mesesDisponibles = [...new Set(r5Data.map(function(r){ return r.mes; }).filter(Boolean))];
+  mesesDisponibles.sort(function(a,b){ return ORDEN_MESES_R5.indexOf(a)-ORDEN_MESES_R5.indexOf(b); });
+  var ultimoMes = mesesDisponibles[mesesDisponibles.length-1] || '';
+  var ultimaFecha = r5Data.reduce(function(max,r){ return r.fecha>max?r.fecha:max; },'');
+  // Si es rango personalizado de fechas, respetar el filtro; si no, usar el ultimo mes del R5
   var filtered;
   if(dateFilter.mode === 'custom'){
     filtered = r5Data.filter(function(r){ return r.fecha >= df && r.fecha <= dt; });
-  } else if(dateFilter.mode === 'mes'){
-    // "Este Mes" en el dashboard es junio (mes actual), pero R5 puede tener mayo
-    // Usamos el mes más reciente disponible en el R5
-    var mesesR5 = [...new Set(r5Data.map(function(r){ return r.mes; }).filter(Boolean))];
-    var ORDEN_MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-    mesesR5.sort(function(a,b){ return ORDEN_MESES.indexOf(a)-ORDEN_MESES.indexOf(b); });
-    var ultimoMes = mesesR5[mesesR5.length-1];
-    filtered = r5Data.filter(function(r){ return r.mes === ultimoMes; });
   } else {
-    // hoy / ayer: usar fecha exacta
-    filtered = r5Data.filter(function(r){ return r.fecha >= df && r.fecha <= dt; });
+    filtered = r5Data.filter(function(r){ return r.mes === ultimoMes; });
   }
 
   // Sumar CONTADOR (no contar filas) — igual que el filtro de Excel
@@ -1744,14 +1741,11 @@ function renderR5(){
   }
 
   var html = '';
-  // Update label after filtering so it shows what was actually used
-  if(dateFilter.mode==='mes' && filtered.length>0){
-    var mesesR5b=[...new Set(r5Data.map(function(r){return r.mes;}).filter(Boolean))];
-    var ORDEN=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-    mesesR5b.sort(function(a,b){return ORDEN.indexOf(a)-ORDEN.indexOf(b);});
-    r5RangeLabel = mesesR5b[mesesR5b.length-1]+' (ultimo mes R5)';
-  }
-  html += '<div class="section-title">R5 ACTIVAS MOVIL <span class="badge">'+r5RangeLabel+'</span></div>';
+  // Label: mostrar mes + corte
+  var r5Label = dateFilter.mode==='custom'
+    ? rangeLabel
+    : (ultimoMes || '--') + ' | Corte: ' + (ultimaFecha || '--');
+  html += '<div class="section-title">R5 ACTIVAS MOVIL <span class="badge">'+r5Label+'</span></div>';
 
   // KPIs del período
   html += '<div style="background:var(--gray-800);border-radius:12px;padding:16px 24px;display:flex;gap:32px;align-items:center;margin-bottom:24px;flex-wrap:wrap">';
@@ -1827,8 +1821,8 @@ function renderR5(){
   }
 
   // Nota si no hay datos del período
-  if(totalFiltrado === 0 && r5Data.length > 0){
-    html += '<div class="error-box" style="background:#FEF3C7;border-color:#FCD34D;color:#92400E"><strong>Sin activas en el período seleccionado</strong>El R5 tiene '+total+' registros en total. Prueba seleccionando "Este Mes" o un rango más amplio.</div>';
+  if(totalFiltrado === 0 && r5Data.length > 0 && dateFilter.mode==='custom'){
+    html += '<div class="error-box" style="background:#FEF3C7;border-color:#FCD34D;color:#92400E"><strong>Sin activas en el rango seleccionado</strong>El R5 disponible va hasta '+ultimaFecha+'. Selecciona un rango dentro de ese período.</div>';
   }
 
   if(r5Data.length === 0){
